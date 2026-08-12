@@ -143,8 +143,24 @@ python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
 
-## Known issue (pre-existing, from the export)
+## Known issues (pre-existing, fix in Claude Design)
 
-The "Now playing" Spotify embed ships with an unresolved `{{ spotifySrc }}`
-binding, so that iframe 404s. This is present in the raw Claude Design export
-and is not introduced by the build — it needs fixing in Claude Design.
+**The contact form discards every message.** `formEndpoint` is an unset prop, so
+`if (endpoint)` is false and no request is ever made — but `setState({ sent:
+true })` runs unconditionally, so the visitor still sees a success
+confirmation. Even once an endpoint is set, `.catch(() => {})` swallows failures
+and reports success anyway. Set `formEndpoint` (Formspree, Basin, etc.) and show
+the confirmation only after a resolved response.
+
+**No `lang` on `<html>`, and no `prefers-reduced-motion` support.** Both are
+accessibility gaps; the site animates a good deal (rotating headline word,
+fade-ups, blur transitions).
+
+**Book spines are click-only.** They carry a click handler but are not
+focusable, so the shelf cannot be operated by keyboard.
+
+Not an issue: the Spotify embed resolves correctly to
+`open.spotify.com/embed/track/...`. A single 404 for the literal
+`{{ spotifySrc }}` appears in server logs because the browser fetches the
+pre-render markup once before the app resolves its bindings — console noise
+only.
