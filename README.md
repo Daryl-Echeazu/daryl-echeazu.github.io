@@ -71,7 +71,29 @@ scrolled fully down the last line of content stopped 110-119px above the bottom
 edge on desktop (78-82px on phones) — the page visibly stopped short. Trimmed to
 land 45-54px / 40-44px, keeping a normal margin without the dead strip.
 
-**7. Extracts the inlined assets to real files.** All 35 assets are decoded
+**7. Un-clips descenders on gradient text.** The rotating hero word and the
+scene quote are painted with a gradient via `-webkit-background-clip: text`,
+which paints only inside the *padding* box. Both set a bottom padding shallower
+than the italic serif's descenders, so the tails of g/j/p/q/y got no paint and
+rendered sheared flat. Verified by forcing "gjpqy" into the hero word: clipped
+at `0.18em`, fully painted at `0.32em`. Each fix pairs the extra padding with an
+equal negative margin, so layout is unchanged.
+
+**8. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
+Twitter now unfurls a card. Those crawlers do **not** run JavaScript, and the
+bundler replaces `documentElement` at runtime, so the meta tags have to live in
+the raw outer `<head>` — which is what the build injects. `social-preview.jpg`
+(1200x630, rendered from the hero) and `favicon.png` live at the repo root, not
+under `assets/`, because the build wipes and rebuilds `assets/`.
+
+If you change the card image, bump the cache-buster — Discord and iMessage cache
+preview images hard:
+
+```sh
+python build.py export.html --card-version 2
+```
+
+**9. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 

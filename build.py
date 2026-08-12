@@ -121,6 +121,68 @@ SPINE_TO = (
     '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
     '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
 
+# ── 8. Link previews (Open Graph / Twitter cards) ────────────────────────────
+# Discord, iMessage, Slack, WhatsApp and Twitter fetch the URL and read meta
+# tags WITHOUT running JavaScript. The bundler replaces documentElement at
+# runtime, so anything in the template's <head> is invisible to them — these
+# have to go in the raw outer <head> that ships in the file.
+#
+# og:image must be an absolute URL. social-preview.jpg lives at the repo root
+# rather than under assets/, because the build wipes and rebuilds assets/.
+SITE_URL = "https://daryl-echeazu.github.io"
+SOCIAL_IMAGE = "social-preview.jpg"
+SOCIAL_MARK = "<!-- [build.py] link preview -->"
+SOCIAL_TITLE = "Daryl Echeazu"
+SOCIAL_DESC = ("Computer Science and Math student at the University of Chicago. "
+               "Projects, experience, and what I'm reading.")
+SOCIAL_ALT = "Daryl Echeazu's site: El Capitan, Yosemite, with the site title over it."
+
+
+def social_block(version):
+    """Meta tags for link unfurling. `version` cache-busts the image: Discord
+    and iMessage cache preview images hard, so a changed card needs a new URL."""
+    img = "%s/%s?v=%d" % (SITE_URL, SOCIAL_IMAGE, version)
+    return "\n".join([
+        "  " + SOCIAL_MARK,
+        '  <meta name="description" content="%s">' % SOCIAL_DESC,
+        '  <link rel="canonical" href="%s/">' % SITE_URL,
+        '  <meta property="og:type" content="website">',
+        '  <meta property="og:site_name" content="%s">' % SOCIAL_TITLE,
+        '  <meta property="og:title" content="%s">' % SOCIAL_TITLE,
+        '  <meta property="og:description" content="%s">' % SOCIAL_DESC,
+        '  <meta property="og:url" content="%s/">' % SITE_URL,
+        '  <meta property="og:image" content="%s">' % img,
+        '  <meta property="og:image:type" content="image/jpeg">',
+        '  <meta property="og:image:width" content="1200">',
+        '  <meta property="og:image:height" content="630">',
+        '  <meta property="og:image:alt" content="%s">' % SOCIAL_ALT,
+        '  <meta name="twitter:card" content="summary_large_image">',
+        '  <meta name="twitter:title" content="%s">' % SOCIAL_TITLE,
+        '  <meta name="twitter:description" content="%s">' % SOCIAL_DESC,
+        '  <meta name="twitter:image" content="%s">' % img,
+        '  <meta name="theme-color" content="#17181c">',
+        '  <link rel="icon" type="image/png" href="favicon.png">',
+        '  <link rel="apple-touch-icon" href="favicon.png">',
+    ])
+
+
+# ── 7. Descenders on gradient text ───────────────────────────────────────────
+# The rotating hero word and the scene quote are painted with a gradient via
+# -webkit-background-clip: text, which paints only inside the PADDING box. Both
+# set a bottom padding shallower than the italic serif's descenders, so the
+# tails of g/j/p/q/y got no paint and rendered sheared flat. Verified by forcing
+# "gjpqy" into the hero word: clipped at 0.18em, fully painted at 0.32em.
+#
+# Each fix keeps layout identical by pairing the extra padding with an equal
+# negative margin (the hero word already does this; the quote gets one added,
+# sized to preserve its current 0.15em of real spacing).
+DESCENDERS = [
+    ('padding: 0.05em 0.12em 0.18em 0.05em; margin: -0.05em -0.12em -0.18em -0.05em;',
+     'padding: 0.05em 0.12em 0.34em 0.05em; margin: -0.05em -0.12em -0.34em -0.05em;'),
+    ('padding: 0.05em 0.1em 0.15em 0.1em;',
+     'padding: 0.05em 0.1em 0.34em 0.1em; margin-bottom: -0.19em;'),
+]
+
 # ── 6. Trailing space at the bottom of scrolling pages ───────────────────────
 # Each scrolling section carries a large bottom padding (70/60/80px). Under the
 # wide-viewport zoom that is multiplied too, so scrolled fully to the bottom the
@@ -274,6 +336,8 @@ def main():
     ap.add_argument("--assets", default="assets", help="asset subdirectory name")
     ap.add_argument("--quality", type=int, default=85, help="JPEG quality (default: 85)")
     ap.add_argument("--no-recompress", action="store_true", help="extract byte-identical images")
+    ap.add_argument("--card-version", type=int, default=1,
+                    help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
     args = ap.parse_args()
 
     with open(args.export, encoding="utf-8") as fh:
@@ -319,6 +383,31 @@ def main():
         print("spine fit    : applied")
     else:
         print("spine fit    : SKIPPED — shelfBooks map not found")
+
+    # ── Link preview meta ────────────────────────────────────────────────────
+    if SOCIAL_MARK in html:
+        print("link preview : already present")
+    else:
+        m = re.search(r"</title>", html)
+        if not m:
+            print("link preview : SKIPPED — no <title> in the outer head")
+        elif not os.path.isfile(os.path.join(os.path.abspath(args.out), SOCIAL_IMAGE)):
+            print("link preview : SKIPPED — %s missing at the site root" % SOCIAL_IMAGE)
+        else:
+            html = html[:m.end()] + "\n" + social_block(args.card_version) + html[m.end():]
+            print("link preview : meta added (card v%d)" % args.card_version)
+
+    # ── Gradient-text descenders ─────────────────────────────────────────────
+    dn = 0
+    for frm, to in DESCENDERS:
+        if to in html:
+            dn += 1
+        elif frm in html:
+            html = html.replace(frm, to)
+            dn += 1
+        else:
+            print("descenders   : SKIPPED — a gradient-text padding not found")
+    print("descenders   : %d of %d gradient texts un-clipped" % (dn, len(DESCENDERS)))
 
     # ── Bottom padding of scrolling pages ────────────────────────────────────
     done = sum(1 for _, to in PADS if to in html)
