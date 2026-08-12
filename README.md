@@ -23,7 +23,7 @@ The raw Claude Design export is one 8.7 MB HTML file with every image, font and
 script inlined as base64. It works, but the whole 8.7 MB has to arrive before
 anything renders, and none of it can be cached or lazy-loaded.
 
-The build applies two changes:
+The build applies these changes:
 
 **1. Scales the site up on wide viewports.** Claude Design lays out against a
 1280px preview, so above ~1500px the design shrinks into the frame. The build
@@ -84,7 +84,7 @@ instead of base64.
 Only the ~11 assets the first screen actually needs are fetched on load; the
 rest arrive when you navigate to them.
 
-Both changes are idempotent — re-running the build on an already-built file is
+All changes are idempotent — re-running the build on an already-built file is
 safe.
 
 Useful flags:

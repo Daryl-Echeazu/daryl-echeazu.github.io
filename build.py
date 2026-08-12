@@ -7,7 +7,8 @@ script inlined as base64 inside a __bundler/manifest blob. That is convenient to
 download and terrible to serve: ~8.7 MB must arrive before anything renders, and
 none of it can be cached, lazy-loaded or fetched in parallel.
 
-This script applies two changes to an export:
+This script applies a set of display fixes to an export, then extracts its
+assets. See README.md for the full list and the measurements behind each one.
 
   1. WIDE-VIEWPORT ZOOM
      Claude Design lays the site out for a 1280px preview, so above ~1500px the
@@ -18,7 +19,7 @@ This script applies two changes to an export:
      assets/, and the manifest is rewritten to hold URLs instead of base64.
      JPEGs are recompressed. index.html drops from ~8.7 MB to ~120 KB.
 
-Both changes are idempotent, so re-running on an already-built file is safe.
+All changes are idempotent, so re-running on an already-built file is safe.
 
 USAGE
     python build.py "path/to/claude-design-export.html"
