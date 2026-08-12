@@ -130,6 +130,28 @@ SPINE_TO = (
     '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
     '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
 
+# ── 9. Rotating headline word: quicker cycle ─────────────────────────────────
+# The word changed every 7s with a 0.7s crossfade. Down to 4.5s with a 0.5s
+# crossfade — noticeably livelier, still long enough to read a two-word phrase
+# like "grinding LeetCode".
+#
+# The three values are coupled and must move together: the swap is scheduled
+# with a timeout that has to outlast the CSS transition, otherwise the word
+# changes while still partly visible and you see it pop mid-fade. Keeping the
+# delay just above the transition (530ms vs 500ms) preserves that, matching the
+# original's 730/700 relationship.
+ROTATION = [
+    # cycle period
+    ("Date.now() / 7000", "Date.now() / 4500"),
+    # swap delay, held just above the fade duration below
+    ("}), 730);", "}), 530);"),
+    # crossfade
+    ("transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), "
+     "filter 0.7s cubic-bezier(0.4, 0, 0.2, 1);",
+     "transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), "
+     "filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);"),
+]
+
 # ── 8. Link previews (Open Graph / Twitter cards) ────────────────────────────
 # Discord, iMessage, Slack, WhatsApp and Twitter fetch the URL and read meta
 # tags WITHOUT running JavaScript. The bundler replaces documentElement at
@@ -458,6 +480,20 @@ def main():
         else:
             html = html[:m.end()] + "\n" + social_block(args.card_version) + html[m.end():]
             print("link preview : meta added (card v%d)" % args.card_version)
+
+    # ── Rotating headline word ───────────────────────────────────────────────
+    rn = 0
+    for frm, to in ROTATION:
+        if to in html:
+            rn += 1
+        elif frm in html:
+            if html.count(frm) != 1:
+                sys.exit("ERROR: rotation string %r appears %d times" % (frm[:30], html.count(frm)))
+            html = html.replace(frm, to)
+            rn += 1
+        else:
+            print("word cycle   : SKIPPED — %r not found" % frm[:30])
+    print("word cycle   : %d of %d values retimed" % (rn, len(ROTATION)))
 
     # ── Gradient-text descenders ─────────────────────────────────────────────
     dn = 0

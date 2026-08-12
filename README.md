@@ -106,7 +106,13 @@ rendered sheared flat. Verified by forcing "gjpqy" into the hero word: clipped
 at `0.18em`, fully painted at `0.32em`. Each fix pairs the extra padding with an
 equal negative margin, so layout is unchanged.
 
-**9. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
+**9. Speeds up the rotating headline word.** 7s per word with a 0.7s crossfade
+down to 4.5s with a 0.5s crossfade. The three values are coupled: the swap is
+scheduled by a timeout that must outlast the CSS transition, or the word changes
+while still partly visible and visibly pops. The delay is kept just above the
+fade (530ms vs 500ms), matching the original's 730/700 relationship.
+
+**10. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
 Twitter now unfurls a card. Those crawlers do **not** run JavaScript, and the
 bundler replaces `documentElement` at runtime, so the meta tags have to live in
 the raw outer `<head>` — which is what the build injects. `social-preview.jpg`
@@ -120,7 +126,7 @@ preview images hard:
 python build.py export.html --card-version 2
 ```
 
-**10. Extracts the inlined assets to real files.** All 35 assets are decoded
+**11. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 
