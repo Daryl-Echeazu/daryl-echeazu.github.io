@@ -37,6 +37,14 @@ viewport units, so a bare `height: 100vh` under `zoom: 1.35` renders 1.35
 viewports tall and the body's `overflow: hidden` clips the bottom ~26% of the
 site with no way to scroll to it.
 
+The height is also set in `dvh`, which matters on iOS. Safari's `100vh` is the
+*large* viewport — it includes the strip behind the bottom toolbar — while the
+page is only painted in the visible area. With `overflow: hidden` and a `100vh`
+wrapper, the last ~80px of every scrolling page sat behind the toolbar and could
+not be reached: the Recently timeline stopped at "Oracle P&L" with the Yosemite
+row unreachable, and the hero headline was sheared. `dvh` tracks the visible
+viewport; the plain `vh` line stays first as a fallback.
+
 **2. Removes the nav blur on the home screen.** The nav applied
 `backdrop-filter: blur(12px)` on every tab, which smeared a frosted band across
 the top of the hero photo. It is now dropped on home and kept on the other

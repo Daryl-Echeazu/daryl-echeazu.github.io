@@ -55,7 +55,16 @@ ZOOM_FROM = ("font-size: 16px; line-height: 1.6; "
              "height: 100vh; overflow: hidden; position: relative;")
 ZOOM_TO = ("font-size: 16px; line-height: 1.6; "
            "--z: clamp(1, calc(100vw / 1280px), 1.35); zoom: var(--z); "
-           "height: calc(100vh / var(--z)); overflow: hidden; position: relative;")
+           "height: calc(100vh / var(--z)); height: calc(100dvh / var(--z)); "
+           "overflow: hidden; position: relative;")
+# The dvh line is not a nicety. On iOS Safari 100vh is the LARGE viewport — it
+# includes the strip behind the bottom toolbar — while the page is only ever
+# painted in the smaller visible area. With body { overflow: hidden } and a
+# 100vh wrapper, the last ~80px of every scrolling page sits behind the toolbar
+# and cannot be reached: the Recently timeline stopped at "Oracle P&L" with the
+# Yosemite row unreachable, and the hero headline was sheared by the toolbar.
+# dvh tracks the *visible* viewport. The plain vh line stays first as a fallback
+# for browsers without dvh; the later declaration wins where it is supported.
 
 # ── 2. Asset externalization ─────────────────────────────────────────────────
 # The runtime decodes each manifest entry to a Blob and substitutes the literal
@@ -221,8 +230,12 @@ NAV_CSS = (
     "     fit on one line, so tighten the tab metrics rather than let the row\\n"
     "     wrap to two lines. */\\n"
     "  @media (max-width: 400px) {\\n"
-    "    div[style*='z-index: 20'] { font-size: 9.6px !important; }\\n"
-    "    div[style*='z-index: 20'] > span { gap: 9px !important; }\\n"
+    "    div[style*='z-index: 20'] {\\n"
+    "      font-size: 11.2px !important;\\n"
+    "      letter-spacing: 0.03em !important;\\n"
+    "    }\\n"
+    "    div[style*='z-index: 20'] > a { font-size: 13px !important; }\\n"
+    "    div[style*='z-index: 20'] > span { gap: 8px !important; }\\n"
     "  }\\n"
     "  /* [build.py] Any title still too long for its spine gets an ellipsis\\n"
     "     rather than a hard mid-word cut, so it reads as deliberate. */\\n"
@@ -266,27 +279,31 @@ NAV_CSS = (
     "      padding-left: 0 !important;\\n"
     "      gap: 16px !important;\\n"
     "    }\\n"
+    "    /* Two shapes appear here: a real cover <img> (225x350 natural, sized\\n"
+    "       300px tall for the desktop column) and, before a spine is picked,\\n"
+    "       a placeholder <div> tile. An earlier rule only matched the div, so\\n"
+    "       the cover kept its full 300px and squeezed the quote into 144px.\\n"
+    "       Size both: height only for the img, so its own aspect ratio is\\n"
+    "       preserved and the art is never squashed or cropped. */\\n"
+    "    div[style*='height: 330px'] > img {\\n"
+    "      height: 200px !important;\\n"
+    "      width: auto !important;\\n"
+    "      max-width: 46% !important;\\n"
+    "      flex: 0 0 auto !important;\\n"
+    "    }\\n"
     "    div[style*='height: 330px'] > div:first-child {\\n"
-    "      width: 124px !important;\\n"
-    "      height: 161px !important;\\n"
+    "      width: 129px !important;\\n"
+    "      height: 200px !important;\\n"
     "      flex: 0 0 auto !important;\\n"
     "    }\\n"
     "    div[style*='height: 330px'] > div:last-child { padding: 0 4px !important; }\\n"
-    "    /* Keep the card pinned further down the stacks. A sticky item is\\n"
-    "       released by the bottom of its containing block — here the shelf\\n"
-    "       row, which ended before the caption below it, so the card let go\\n"
-    "       just as that text arrived. The range is the container's CONTENT\\n"
-    "       box (padding on it does nothing for a sticky flex item), so grow\\n"
-    "       the sibling books column instead and cancel it with an equal\\n"
-    "       negative margin on the row, leaving everything below unmoved.\\n"
-    "\\n"
-    "       120px is the ceiling: measured, the card releases at scrollTop\\n"
-    "       2410 against a maxScroll of 2443. At 160px+ it never releases and\\n"
-    "       would still be covering the Recently heading at the bottom of the\\n"
-    "       page. Going further needs trailing scroll space, which re-opens\\n"
-    "       the bottom gap trimmed above. */\\n"
-    "    div[style*='gap: 56px'] > :first-child { padding-bottom: 120px !important; }\\n"
-    "    div[style*='gap: 56px'] { margin-bottom: -120px !important; }\\n"
+    "    /* The card is released by the bottom of its containing block — the\\n"
+    "       shelf row — which ends right above the shelf's caption. That is\\n"
+    "       where it should stop: the caption stays clear and the card is\\n"
+    "       never caught half-scrolled with its cover art sheared by the nav.\\n"
+    "       An earlier revision extended that range by 120px; on a real phone\\n"
+    "       it rode up over the caption and the Recently heading, so it is\\n"
+    "       gone and the natural release point stands. */\\n"
     "    /* The credit line is nowrap at 0.22em tracking — ~222px of text in a\\n"
     "       210px column, so it runs off the edge. Let it wrap and tighten. */\\n"
     "    div[style*='height: 330px'] div[style*='nowrap'] {\\n"
