@@ -86,6 +86,40 @@ RUNTIME_TO = (
 BLUR_FROM = 'navBlur: \\"blur(12px)\\",'
 BLUR_TO = 'navBlur: s.tab === \\"home\\" ? \\"none\\" : \\"blur(12px)\\",'
 
+# Without the blur, the flat translucent navBg left a hard horizontal edge
+# across the hero photo where the bar ended. Fade it out instead: full strength
+# behind the nav text, transparent by the bottom edge, so there is nothing to
+# see the seam of. Only home needs this — the other tabs sit over a flat dark
+# page where the band is invisible anyway.
+NAVBG_FROM = 'navBg: s.tab === \\"home\\" ? \\"oklch(0.13 0.005 260 / 0.18)\\"'
+NAVBG_TO = ('navBg: s.tab === \\"home\\" ? \\"linear-gradient(to bottom, '
+            'oklch(0.13 0.005 260 / 0.5) 0%, oklch(0.13 0.005 260 / 0.38) 45%, '
+            'oklch(0.13 0.005 260 / 0) 100%)\\"')
+
+# ── 5. Book spines: fit the title to the spine ───────────────────────────────
+# Spine titles are vertical text in a fixed-height box with overflow: hidden, so
+# anything too long is hard-clipped mid-word. Book height scales by 0.82 on
+# mobile while the font only drops 13px -> 12px, so the text shrinks far less
+# than its container: 19 of 24 spines clipped at 390px (worst, "Classroom of
+# the Elite", by 45px) and 6 of 24 even at 1600px.
+#
+# Give mobile spines more height (0.82 -> 0.95) and size each title to the space
+# it actually has, with a readable floor. Both are values of existing bindings
+# (b.h / b.fs), computed where b.title is in scope.
+SPINE_FROM = ('title: b.title, mark: b.mark, fs: mob ? \\"12px\\" : \\"13px\\",\\n'
+              '        h: Math.round(b.h * (mob ? 0.82 : 1.08)) + \\"px\\",')
+SPINE_TO = (
+    'title: b.title, mark: b.mark,\\n'
+    '        fs: (function (bh, n) {\\n'
+    '          // ~0.66em per character vertically, plus ~32px of cap, padding\\n'
+    '          // and the volume mark at the foot of the spine. Calibrated by\\n'
+    '          // measuring scrollHeight vs clientHeight on every spine.\\n'
+    '          var fit = (bh - 32) / (n * 0.66);\\n'
+    '          var max = mob ? 12 : 13;\\n'
+    '          return Math.max(8.5, Math.min(max, Math.floor(fit * 10) / 10)) + \\"px\\";\\n'
+    '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
+    '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
+
 # ── 4. Mobile nav layout ─────────────────────────────────────────────────────
 # The nav is grid-template-columns: 1fr auto 1fr — an empty third column so the
 # tabs sit optically centred. That splits the leftover space evenly, so on a
@@ -111,6 +145,46 @@ NAV_CSS = (
     "  @media (max-width: 400px) {\\n"
     "    div[style*='z-index: 20'] { font-size: 9.6px !important; }\\n"
     "    div[style*='z-index: 20'] > span { gap: 9px !important; }\\n"
+    "  }\\n"
+    "  /* [build.py] Any title still too long for its spine gets an ellipsis\\n"
+    "     rather than a hard mid-word cut, so it reads as deliberate. */\\n"
+    "  span[style*='vertical-rl'] { text-overflow: ellipsis; }\\n"
+    "  /* [build.py] Phone shelf: the scene panel is a flex item that wraps\\n"
+    "     BELOW the three-row bookshelf, landing ~1030px down — off screen, so\\n"
+    "     you cannot see the stack and the scene you just tapped at the same\\n"
+    "     time. Spines carry a click handler, so pin the panel above the shelf\\n"
+    "     and let it stick while you scroll and tap. The inline top: 200px is a\\n"
+    "     desktop offset and is pure harm here. */\\n"
+    "  @media (max-width: 760px) {\\n"
+    "    div[style*='top: 200px'] {\\n"
+    "      order: -1 !important;\\n"
+    "      position: sticky !important;\\n"
+    "      top: 64px !important;\\n"
+    "      margin: 0 0 22px !important;\\n"
+    "      z-index: 5 !important;\\n"
+    "      background: oklch(0.13 0.005 260 / 0.92) !important;\\n"
+    "      backdrop-filter: blur(6px) !important;\\n"
+    "    }\\n"
+    "    /* The panel's inner row is sized for the desktop column: a 200px tile\\n"
+    "       plus a 26px indent leaves the quote only 96px of a 350px panel, so\\n"
+    "       it gets cut off. Shrink the tile and drop the indent. */\\n"
+    "    div[style*='height: 330px'] {\\n"
+    "      height: auto !important;\\n"
+    "      padding-left: 0 !important;\\n"
+    "      gap: 16px !important;\\n"
+    "    }\\n"
+    "    div[style*='height: 330px'] > div:first-child {\\n"
+    "      width: 124px !important;\\n"
+    "      height: 161px !important;\\n"
+    "      flex: 0 0 auto !important;\\n"
+    "    }\\n"
+    "    div[style*='height: 330px'] > div:last-child { padding: 0 4px !important; }\\n"
+    "    /* The credit line is nowrap at 0.22em tracking — ~222px of text in a\\n"
+    "       210px column, so it runs off the edge. Let it wrap and tighten. */\\n"
+    "    div[style*='height: 330px'] div[style*='nowrap'] {\\n"
+    "      white-space: normal !important;\\n"
+    "      letter-spacing: 0.13em !important;\\n"
+    "    }\\n"
     "  }\\n"
 )
 
@@ -197,6 +271,24 @@ def main():
     else:
         print("home nav blur: SKIPPED — navBlur binding not found")
 
+    # ── Nav background gradient ──────────────────────────────────────────────
+    if NAVBG_TO in html:
+        print("nav gradient : already present")
+    elif NAVBG_FROM in html:
+        html = html.replace(NAVBG_FROM, NAVBG_TO)
+        print("nav gradient : applied")
+    else:
+        print("nav gradient : SKIPPED — navBg binding not found")
+
+    # ── Book spine fitting ───────────────────────────────────────────────────
+    if SPINE_TO in html:
+        print("spine fit    : already present")
+    elif SPINE_FROM in html:
+        html = html.replace(SPINE_FROM, SPINE_TO)
+        print("spine fit    : applied")
+    else:
+        print("spine fit    : SKIPPED — shelfBooks map not found")
+
     # ── Phone nav layout ─────────────────────────────────────────────────────
     if NAV_CSS in html:
         print("phone nav   : already patched")
@@ -279,6 +371,23 @@ def main():
         print("runtime     : patched")
     else:
         sys.exit("ERROR: could not find the asset decode loop to patch")
+
+    # ── Sanity gate ──────────────────────────────────────────────────────────
+    # The template is a JSON string inside a <script> tag. A patch that injects
+    # a raw newline, an unescaped quote, or a literal "</" silently produces a
+    # file that parses as HTML but explodes at JSON.parse, leaving a blank page.
+    # Cheap to check, so never ship without checking.
+    for kind in ("template", "manifest", "ext_resources", "page_order"):
+        text = section(html, kind).group(1)
+        try:
+            json.loads(text)
+        except ValueError as exc:
+            sys.exit("ERROR: %s block is not valid JSON after patching (%s).\n"
+                     "       A patch probably injected a raw newline or quote."
+                     % (kind, exc))
+    if "</" in section(html, "template").group(1):
+        sys.exit("ERROR: template contains a literal '</' — it would terminate "
+                 "its own <script> tag. Escape it as '<\\\\u002F'.")
 
     index = os.path.join(outdir, "index.html")
     with open(index, "w", encoding="utf-8", newline="") as fh:

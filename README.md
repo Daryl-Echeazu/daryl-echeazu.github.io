@@ -49,7 +49,23 @@ leftover space evenly, so on a 390px phone the name column gets ~57px and
 its natural width and the tabs take the remainder; below 400px the tab metrics
 tighten so the row still fits on one line. Desktop layout is untouched.
 
-**4. Extracts the inlined assets to real files.** All 35 assets are decoded
+**4. Fits book spine titles.** Spine titles are vertical text in a fixed-height
+box with `overflow: hidden`. Book height scales by 0.82 on phones while the font
+only drops 13px to 12px, so titles overflowed and were hard-clipped mid-word —
+19 of 24 spines at 390px (worst short by 45px) and 6 of 24 even at 1600px. Each
+title is now sized to the space it actually has, phone spines are a little
+taller, and anything still too long gets an ellipsis instead of a hard cut.
+Worst-case overflow is down from 45px to 12px.
+
+**5. Makes the shelf usable on a phone.** The scene panel is a flex item that
+wrapped *below* the three-row bookshelf, landing ~1030px down — off screen, so
+you could never see the stack and the scene you just tapped at the same time.
+Spines carry a click handler, so the panel is now pinned above the shelf and
+sticks while you scroll and tap. Its inner row is also sized for the desktop
+column (a 200px tile left the quote just 96px of a 350px panel), so the tile
+shrinks and the credit line wraps on phones.
+
+**6. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 
