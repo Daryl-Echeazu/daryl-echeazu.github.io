@@ -65,6 +65,17 @@ sticks while you scroll and tap. Its inner row is also sized for the desktop
 column (a 200px tile left the quote just 96px of a 350px panel), so the tile
 shrinks and the credit line wraps on phones.
 
+The card also stays pinned further down the section. A sticky item is released
+by the bottom of its *containing block* — here the shelf row, which ends before
+the caption below it, so the card let go just as that text arrived. The range is
+the container's **content** box (padding on it does nothing for a sticky flex
+item), so the build grows the sibling books column and cancels it with an equal
+negative margin on the row, leaving everything below unmoved. 120px is the
+ceiling: measured, the card releases at scrollTop 2410 against a maxScroll of
+2443. At 160px+ it never releases and would still cover the Recently heading at
+the bottom of the page — going further would need trailing scroll space, which
+re-opens the bottom gap closed above.
+
 **6. Lets pages reach the bottom.** Each scrolling section carried a large
 bottom padding (70/60/80px), multiplied again by the wide-viewport zoom, so
 scrolled fully down the last line of content stopped 110-119px above the bottom
