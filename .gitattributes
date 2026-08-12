@@ -1,0 +1,5 @@
+# Generated output. Nothing here should have its line endings rewritten —
+# assets must round-trip byte-identically to what build.py extracted, and
+# index.html is machine-generated.
+assets/** -text
+index.html -text
