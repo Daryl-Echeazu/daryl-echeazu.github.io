@@ -112,13 +112,18 @@ The cycle goes from 7s to 4.5s per word. The crossfade stays at its original
 retime the fade, note it is coupled to a swap timeout that must outlast it, or
 the word changes while still visible and pops mid-fade.)
 
-On phones the word also gets its own line. It sat inline after "occasionally",
-so a long word wrapped and the headline went from two lines to three; since the
-block is bottom-anchored, everything above the last line jumped a full line each
-time the word changed. Measured at 393px: 2 lines for "cooking", 3 for "touching
-grass". Now always three, so the headline is pixel-identical whatever word is
-showing. Desktop already measures two lines for every word in the list, so it is
-left alone.
+On phones the headline is also sized to stay two lines. The word sits inline
+after "occasionally", so a long one wrapped to a third line; since the block is
+bottom-anchored, everything above the last line jumped a full line each time the
+word changed. The size that keeps even the longest entry inline was
+binary-searched per width and is a steady 7.49vw from 320 to 430px, so the build
+sets `clamp(22px, 7.3vw, 44px)`. Verified across seven words at 320/393/430px:
+one distinct geometry each, two lines, no overflow.
+
+The cost is a smaller headline on phones — about 19% down at 393px (35.4 to 28.7
+CSS px). It is dictated by the longest entry in `rotWords`, so shortening those
+in Claude Design would buy the size back. Desktop already measures two lines for
+every word, so it is left alone.
 
 **10. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
 Twitter now unfurls a card. Those crawlers do **not** run JavaScript, and the
