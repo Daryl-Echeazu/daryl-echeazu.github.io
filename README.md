@@ -50,14 +50,22 @@ viewport; the plain `vh` line stays first as a fallback.
 the top of the hero photo. It is now dropped on home and kept on the other
 tabs, where content actually scrolls under the bar and the blur earns its keep.
 
-**3. Fixes the nav on phones.** The nav is `grid-template-columns: 1fr auto 1fr`
+**3. Scales the whole phone view up.** Below 760px the wrapper's `--z` is
+overridden to `1.12`, so `zoom` and the `dvh` height both scale uniformly —
+the same mechanism as the desktop zoom, driven by one property. The cost is
+layout width: at 393px an effective 351px remains, so the nav metrics are tuned
+down to compensate (they still render larger than before, since the zoom scales
+them back up). Anything positioned against the nav must use the **zoomed**
+coordinate space: the nav measures 56-57 screen px, which is 50 CSS px here.
+
+**4. Fixes the nav on phones.** The nav is `grid-template-columns: 1fr auto 1fr`
 (an empty third column, so the tabs sit optically centred). That splits the
 leftover space evenly, so on a 390px phone the name column gets ~57px and
 "DARYL ECHEAZU" breaks mid-name onto two lines. Below 760px the name now takes
 its natural width and the tabs take the remainder; below 400px the tab metrics
 tighten so the row still fits on one line. Desktop layout is untouched.
 
-**4. Fits book spine titles.** Spine titles are vertical text in a fixed-height
+**5. Fits book spine titles.** Spine titles are vertical text in a fixed-height
 box with `overflow: hidden`. Book height scales by 0.82 on phones while the font
 only drops 13px to 12px, so titles overflowed and were hard-clipped mid-word —
 19 of 24 spines at 390px (worst short by 45px) and 6 of 24 even at 1600px. Each
@@ -65,7 +73,7 @@ title is now sized to the space it actually has, phone spines are a little
 taller, and anything still too long gets an ellipsis instead of a hard cut.
 Worst-case overflow is down from 45px to 12px.
 
-**5. Makes the shelf usable on a phone.** The scene panel is a flex item that
+**6. Makes the shelf usable on a phone.** The scene panel is a flex item that
 wrapped *below* the three-row bookshelf, landing ~1030px down — off screen, so
 you could never see the stack and the scene you just tapped at the same time.
 Spines carry a click handler, so the panel is now pinned above the shelf and
@@ -84,13 +92,13 @@ ceiling: measured, the card releases at scrollTop 2410 against a maxScroll of
 the bottom of the page — going further would need trailing scroll space, which
 re-opens the bottom gap closed above.
 
-**6. Lets pages reach the bottom.** Each scrolling section carried a large
+**7. Lets pages reach the bottom.** Each scrolling section carried a large
 bottom padding (70/60/80px), multiplied again by the wide-viewport zoom, so
 scrolled fully down the last line of content stopped 110-119px above the bottom
 edge on desktop (78-82px on phones) — the page visibly stopped short. Trimmed to
 land 45-54px / 40-44px, keeping a normal margin without the dead strip.
 
-**7. Un-clips descenders on gradient text.** The rotating hero word and the
+**8. Un-clips descenders on gradient text.** The rotating hero word and the
 scene quote are painted with a gradient via `-webkit-background-clip: text`,
 which paints only inside the *padding* box. Both set a bottom padding shallower
 than the italic serif's descenders, so the tails of g/j/p/q/y got no paint and
@@ -98,7 +106,7 @@ rendered sheared flat. Verified by forcing "gjpqy" into the hero word: clipped
 at `0.18em`, fully painted at `0.32em`. Each fix pairs the extra padding with an
 equal negative margin, so layout is unchanged.
 
-**8. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
+**9. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
 Twitter now unfurls a card. Those crawlers do **not** run JavaScript, and the
 bundler replaces `documentElement` at runtime, so the meta tags have to live in
 the raw outer `<head>` — which is what the build injects. `social-preview.jpg`
@@ -112,7 +120,7 @@ preview images hard:
 python build.py export.html --card-version 2
 ```
 
-**9. Extracts the inlined assets to real files.** All 35 assets are decoded
+**10. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 
