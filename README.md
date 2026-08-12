@@ -106,11 +106,19 @@ rendered sheared flat. Verified by forcing "gjpqy" into the hero word: clipped
 at `0.18em`, fully painted at `0.32em`. Each fix pairs the extra padding with an
 equal negative margin, so layout is unchanged.
 
-**9. Speeds up the rotating headline word.** 7s per word with a 0.7s crossfade
-down to 4.5s with a 0.5s crossfade. The three values are coupled: the swap is
-scheduled by a timeout that must outlast the CSS transition, or the word changes
-while still partly visible and visibly pops. The delay is kept just above the
-fade (530ms vs 500ms), matching the original's 730/700 relationship.
+**9. Speeds up the rotating headline word, and holds the headline still.**
+The cycle goes from 7s to 4.5s per word. The crossfade stays at its original
+0.7s — the word changes more often, each change is as gentle as it was. (If you
+retime the fade, note it is coupled to a swap timeout that must outlast it, or
+the word changes while still visible and pops mid-fade.)
+
+On phones the word also gets its own line. It sat inline after "occasionally",
+so a long word wrapped and the headline went from two lines to three; since the
+block is bottom-anchored, everything above the last line jumped a full line each
+time the word changed. Measured at 393px: 2 lines for "cooking", 3 for "touching
+grass". Now always three, so the headline is pixel-identical whatever word is
+showing. Desktop already measures two lines for every word in the list, so it is
+left alone.
 
 **10. Adds link previews.** Pasting the URL into Discord, iMessage, Slack or
 Twitter now unfurls a card. Those crawlers do **not** run JavaScript, and the

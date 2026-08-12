@@ -141,15 +141,10 @@ SPINE_TO = (
 # delay just above the transition (530ms vs 500ms) preserves that, matching the
 # original's 730/700 relationship.
 ROTATION = [
-    # cycle period
+    # Cycle period only. The crossfade stays at the original 0.7s (and its
+    # 730ms swap delay) — shortening it to 0.5s read as harried. The word
+    # changes more often; each change is as gentle as it was.
     ("Date.now() / 7000", "Date.now() / 4500"),
-    # swap delay, held just above the fade duration below
-    ("}), 730);", "}), 530);"),
-    # crossfade
-    ("transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), "
-     "filter 0.7s cubic-bezier(0.4, 0, 0.2, 1);",
-     "transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), "
-     "filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);"),
 ]
 
 # ── 8. Link previews (Open Graph / Twitter cards) ────────────────────────────
@@ -252,6 +247,26 @@ NAV_CSS = (
     "     render larger than before, since the zoom scales them back up). */\\n"
     "  @media (max-width: 760px) {\\n"
     "    div[data-theme] { --z: 1.12 !important; }\\n"
+    "  }\\n"
+    "  /* [build.py] Hold the headline still as the rotating word changes.\\n"
+    "     The word sits inline after \\\"occasionally\\\", so a long one wraps and the\\n"
+    "     headline goes from two lines to three. The block is bottom-anchored,\\n"
+    "     so the last line stays put but everything above it jumps a full line.\\n"
+    "     Measured on a 393px phone: 2 lines for \\\"cooking\\\", 3 for \\\"touching\\n"
+    "     grass\\\" and \\\"grinding LeetCode\\\".\\n"
+    "\\n"
+    "     Giving the word its own line makes it always three, so nothing moves\\n"
+    "     whatever word is showing. Phones only — desktop already measures two\\n"
+    "     lines for every word in the list, so it is consistent as it stands and\\n"
+    "     is left alone. The side margins are zeroed because they exist to undo\\n"
+    "     the inline padding; as a block they would push the text past the\\n"
+    "     column's right edge. */\\n"
+    "  @media (max-width: 760px) {\\n"
+    "    h1 span {\\n"
+    "      display: block !important;\\n"
+    "      margin-left: 0 !important;\\n"
+    "      margin-right: 0 !important;\\n"
+    "    }\\n"
     "  }\\n"
     "  /* [build.py] Phone nav: keep the name on one line. */\\n"
     "  @media (max-width: 760px) {\\n"
