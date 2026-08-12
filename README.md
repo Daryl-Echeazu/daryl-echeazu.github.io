@@ -65,7 +65,13 @@ sticks while you scroll and tap. Its inner row is also sized for the desktop
 column (a 200px tile left the quote just 96px of a 350px panel), so the tile
 shrinks and the credit line wraps on phones.
 
-**6. Extracts the inlined assets to real files.** All 35 assets are decoded
+**6. Lets pages reach the bottom.** Each scrolling section carried a large
+bottom padding (70/60/80px), multiplied again by the wide-viewport zoom, so
+scrolled fully down the last line of content stopped 110-119px above the bottom
+edge on desktop (78-82px on phones) — the page visibly stopped short. Trimmed to
+land 45-54px / 40-44px, keeping a normal margin without the dead strip.
+
+**7. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 

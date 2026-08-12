@@ -120,6 +120,21 @@ SPINE_TO = (
     '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
     '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
 
+# ── 6. Trailing space at the bottom of scrolling pages ───────────────────────
+# Each scrolling section carries a large bottom padding (70/60/80px). Under the
+# wide-viewport zoom that is multiplied too, so scrolled fully to the bottom the
+# last line of real content stopped 110-119px above the bottom edge on desktop
+# (78-82px on phones) — the page visibly stops short of where it ends. Trim the
+# bottom value only; the top and side padding are untouched.
+PADS = [
+    ('aboutPad: mob ? \\"104px 20px 60px\\" : \\"130px 40px 70px\\"',
+     'aboutPad: mob ? \\"104px 20px 22px\\" : \\"130px 40px 18px\\"'),
+    ('workPad: mob ? \\"104px 20px 60px\\" : \\"130px 48px 60px\\"',
+     'workPad: mob ? \\"104px 20px 22px\\" : \\"130px 48px 18px\\"'),
+    ('inboxPad: mob ? \\"104px 20px 60px\\" : \\"150px 40px 80px\\"',
+     'inboxPad: mob ? \\"104px 20px 22px\\" : \\"150px 40px 24px\\"'),
+]
+
 # ── 4. Mobile nav layout ─────────────────────────────────────────────────────
 # The nav is grid-template-columns: 1fr auto 1fr — an empty third column so the
 # tabs sit optically centred. That splits the leftover space evenly, so on a
@@ -149,6 +164,10 @@ NAV_CSS = (
     "  /* [build.py] Any title still too long for its spine gets an ellipsis\\n"
     "     rather than a hard mid-word cut, so it reads as deliberate. */\\n"
     "  span[style*='vertical-rl'] { text-overflow: ellipsis; }\\n"
+    "  /* [build.py] The sticky panel sits directly under the nav (49px tall at\\n"
+    "     this width), so its band and the nav's read as one surface with no\\n"
+    "     strip of sharp scrolling content between them. Same blur as the nav\\n"
+    "     for the same reason. */\\n"
     "  /* [build.py] Phone shelf: the scene panel is a flex item that wraps\\n"
     "     BELOW the three-row bookshelf, landing ~1030px down — off screen, so\\n"
     "     you cannot see the stack and the scene you just tapped at the same\\n"
@@ -159,11 +178,22 @@ NAV_CSS = (
     "    div[style*='top: 200px'] {\\n"
     "      order: -1 !important;\\n"
     "      position: sticky !important;\\n"
-    "      top: 64px !important;\\n"
-    "      margin: 0 0 22px !important;\\n"
+    "      top: 49px !important;\\n"
+    "      /* Full-bleed across the section's 20px side padding, with the\\n"
+    "         padding added back inside, so the band is a clean opaque strip\\n"
+    "         that fully contains the panel. Otherwise shelf text scrolling\\n"
+    "         past peeks down the sides and just under the tile. */\\n"
+    "      margin: 0 -20px 22px !important;\\n"
+    "      padding: 0 20px 16px !important;\\n"
+    "      box-sizing: border-box !important;\\n"
+    "      width: calc(100% + 40px) !important;\\n"
     "      z-index: 5 !important;\\n"
-    "      background: oklch(0.13 0.005 260 / 0.92) !important;\\n"
-    "      backdrop-filter: blur(6px) !important;\\n"
+    "      /* Fully opaque: at 0.94 the shelf caption ghosted through the band\\n"
+    "         as it scrolled under, which reads as text overlapping the image.\\n"
+    "         Same colour as the page, so at rest the band is invisible. */\\n"
+    "      background: oklch(0.13 0.005 260) !important;\\n"
+    "      backdrop-filter: blur(12px) !important;\\n"
+    "      -webkit-backdrop-filter: blur(12px) !important;\\n"
     "    }\\n"
     "    /* The panel's inner row is sized for the desktop column: a 200px tile\\n"
     "       plus a 26px indent leaves the quote only 96px of a 350px panel, so\\n"
@@ -288,6 +318,18 @@ def main():
         print("spine fit    : applied")
     else:
         print("spine fit    : SKIPPED — shelfBooks map not found")
+
+    # ── Bottom padding of scrolling pages ────────────────────────────────────
+    done = sum(1 for _, to in PADS if to in html)
+    for frm, to in PADS:
+        if to in html:
+            continue
+        if frm in html:
+            html = html.replace(frm, to)
+            done += 1
+        else:
+            print("bottom pad   : SKIPPED — %s not found" % frm.split(":")[0])
+    print("bottom pad   : %d of %d sections trimmed" % (done, len(PADS)))
 
     # ── Phone nav layout ─────────────────────────────────────────────────────
     if NAV_CSS in html:
