@@ -37,7 +37,19 @@ viewport units, so a bare `height: 100vh` under `zoom: 1.35` renders 1.35
 viewports tall and the body's `overflow: hidden` clips the bottom ~26% of the
 site with no way to scroll to it.
 
-**2. Extracts the inlined assets to real files.** All 35 assets are decoded
+**2. Removes the nav blur on the home screen.** The nav applied
+`backdrop-filter: blur(12px)` on every tab, which smeared a frosted band across
+the top of the hero photo. It is now dropped on home and kept on the other
+tabs, where content actually scrolls under the bar and the blur earns its keep.
+
+**3. Fixes the nav on phones.** The nav is `grid-template-columns: 1fr auto 1fr`
+(an empty third column, so the tabs sit optically centred). That splits the
+leftover space evenly, so on a 390px phone the name column gets ~57px and
+"DARYL ECHEAZU" breaks mid-name onto two lines. Below 760px the name now takes
+its natural width and the tabs take the remainder; below 400px the tab metrics
+tighten so the row still fits on one line. Desktop layout is untouched.
+
+**4. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
 instead of base64.
 

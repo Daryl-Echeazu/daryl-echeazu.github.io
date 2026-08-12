@@ -72,6 +72,48 @@ RUNTIME_TO = (
     "      try {"
 )
 
+# ── 3. No nav blur on the home screen ────────────────────────────────────────
+# The nav already dims its own background less on home (navBg alpha 0.18 vs
+# 0.55) but still applied backdrop-filter: blur(12px) everywhere, which smeared
+# a frosted band across the top of the hero photo. Drop it on home and keep it
+# on the other tabs, where content genuinely scrolls under the bar and the blur
+# is doing legibility work. Text stays readable on home via navBg plus the
+# nav's existing text-shadow.
+#
+# This edits the value of an EXISTING binding rather than adding a new one:
+# the template is precompiled (data-dc-tpl indices), so a brand new {{ token }}
+# would not resolve.
+BLUR_FROM = 'navBlur: \\"blur(12px)\\",'
+BLUR_TO = 'navBlur: s.tab === \\"home\\" ? \\"none\\" : \\"blur(12px)\\",'
+
+# ── 4. Mobile nav layout ─────────────────────────────────────────────────────
+# The nav is grid-template-columns: 1fr auto 1fr — an empty third column so the
+# tabs sit optically centred. That splits the leftover space evenly, so on a
+# 390px phone the name column gets ~57px and "DARYL ECHEAZU" breaks mid-name
+# onto two lines, making the bar tall and lopsided. On desktop there is enough
+# slack that it never shows.
+#
+# Below 760px (the app's own `mob` breakpoint) give the name its natural width
+# and let the tabs take the remainder. Done in CSS rather than a new binding,
+# for the precompiled-template reason above; !important because the grid is set
+# in an inline style attribute. The selector keys off the nav's z-index, which
+# is the only stable thing about an inline-styled element.
+NAV_CSS_ANCHOR = "\\n<\\u002Fstyle>\\n<\\u002Fhelmet>"
+NAV_CSS = (
+    "\\n  /* [build.py] Phone nav: keep the name on one line. */\\n"
+    "  @media (max-width: 760px) {\\n"
+    "    div[style*='z-index: 20'] { grid-template-columns: auto 1fr !important; }\\n"
+    "    div[style*='z-index: 20'] > a { white-space: nowrap !important; }\\n"
+    "  }\\n"
+    "  /* [build.py] Narrow phones (<=400px): the name plus four tabs no longer\\n"
+    "     fit on one line, so tighten the tab metrics rather than let the row\\n"
+    "     wrap to two lines. */\\n"
+    "  @media (max-width: 400px) {\\n"
+    "    div[style*='z-index: 20'] { font-size: 9.6px !important; }\\n"
+    "    div[style*='z-index: 20'] > span { gap: 9px !important; }\\n"
+    "  }\\n"
+)
+
 EXT_BY_MIME = {
     "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif",
     "image/webp": ".webp", "image/svg+xml": ".svg", "image/avif": ".avif",
@@ -143,6 +185,28 @@ def main():
         print("zoom patch  : applied")
     else:
         print("zoom patch  : SKIPPED — wrapper style not found (Claude Design markup changed?)")
+
+    # ── Nav blur ─────────────────────────────────────────────────────────────
+    if BLUR_TO in html:
+        print("home nav blur: already removed")
+    elif BLUR_FROM in html:
+        if html.count(BLUR_FROM) != 1:
+            sys.exit("ERROR: expected 1 navBlur binding, found %d" % html.count(BLUR_FROM))
+        html = html.replace(BLUR_FROM, BLUR_TO)
+        print("home nav blur: removed")
+    else:
+        print("home nav blur: SKIPPED — navBlur binding not found")
+
+    # ── Phone nav layout ─────────────────────────────────────────────────────
+    if NAV_CSS in html:
+        print("phone nav   : already patched")
+    elif NAV_CSS_ANCHOR in html:
+        if html.count(NAV_CSS_ANCHOR) != 1:
+            sys.exit("ERROR: expected 1 stylesheet anchor, found %d" % html.count(NAV_CSS_ANCHOR))
+        html = html.replace(NAV_CSS_ANCHOR, NAV_CSS + NAV_CSS_ANCHOR)
+        print("phone nav   : patched")
+    else:
+        print("phone nav   : SKIPPED — stylesheet anchor not found")
 
     # ── Parse bundle sections ────────────────────────────────────────────────
     man_m = section(html, "manifest")
