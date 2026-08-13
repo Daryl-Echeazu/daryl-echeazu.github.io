@@ -171,6 +171,33 @@ python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
 
+## The Valley
+
+`valley.js` adds an interactive west-to-east section of Yosemite. The About page
+already carried eight captioned photographs of named places in the valley, shown
+in a next/prev carousel; this pins each one where it was taken, so the set reads
+as one place rather than nine unrelated frames. Open it by clicking the photo
+caption on About, or call `window.__openValley()`.
+
+It is deliberately built to survive the bundler:
+
+- Loaded from the **outer** `<head>`, which is replaced wholesale at startup —
+  fine, because the file has already executed and its listeners live on
+  `document`.
+- The overlay mounts on `document.body`, **outside** the app's root, so the
+  app's re-render on every tab change cannot remove it.
+- The trigger is a **delegated** listener, not an injected button, for the same
+  reason.
+- Photographs resolve through `window.__resources`, so no filenames are
+  hardcoded and a re-export that renames assets does not break it.
+
+On phones the map holds a legible fixed width and is swiped west to east —
+scaled to fit, the whole valley became a decorative strip with unreadable labels
+and 18px tap targets. Only the map scrolls sideways; the page does not.
+
+To add or move a place, edit `PLACES` — but the pins sit *on* the silhouette in
+`terrain()`, so the coordinates and that path have to move together.
+
 ## Known issues (pre-existing, fix in Claude Design)
 
 **The contact form discards every message.** `formEndpoint` is an unset prop, so

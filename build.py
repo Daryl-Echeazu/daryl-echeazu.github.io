@@ -130,6 +130,35 @@ SPINE_TO = (
     '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
     '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
 
+# ── 11. The Valley ───────────────────────────────────────────────────────────
+# An interactive west-to-east section of Yosemite with the About page's eight
+# captioned photographs pinned where they were taken. See valley.js for why it
+# mounts outside the app's root and binds its trigger by delegation.
+#
+# The script tag goes in the OUTER head. That head is replaced along with
+# documentElement, but the file has already executed by then and its listeners
+# live on `document`, so it survives — the same reason the icon link had to be
+# duplicated into the template instead.
+VALLEY_SCRIPT = '  <script src="valley.js"></script>'
+
+# The doorway is the existing photo caption, styled to look like one. A stylesheet
+# rule rather than injected markup, because anything injected into the app's
+# subtree is wiped on its next re-render.
+VALLEY_CSS = (
+    "\\n  /* [build.py] The photo caption opens The Valley (see valley.js). */\\n"
+    "  div[style*='margin-top: 9px'] {\\n"
+    "    cursor: pointer;\\n"
+    "    transition: color 0.2s ease;\\n"
+    "  }\\n"
+    "  div[style*='margin-top: 9px']:hover { color: oklch(0.86 0.13 85) !important; }\\n"
+    "  div[style*='margin-top: 9px']::after {\\n"
+    "    content: 'VIEW THE VALLEY';\\n"
+    "    margin-left: 10px;\\n"
+    "    opacity: 0.55;\\n"
+    "    border-bottom: 1px solid currentColor;\\n"
+    "  }\\n"
+)
+
 # ── 10. Accessibility: language attribute ────────────────────────────────────
 # Neither <html> carried a lang attribute. Screen readers use it to pick a
 # pronunciation dictionary, so without it an English page may be read with the
@@ -256,6 +285,7 @@ PADS = [
 # is the only stable thing about an inline-styled element.
 NAV_CSS_ANCHOR = "\\n<\\u002Fstyle>\\n<\\u002Fhelmet>"
 NAV_CSS = (
+    VALLEY_CSS +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"
@@ -513,6 +543,19 @@ def main():
         else:
             html = html[:m.end()] + "\n" + social_block(args.card_version) + html[m.end():]
             print("link preview : meta added (card v%d)" % args.card_version)
+
+    # ── The Valley ───────────────────────────────────────────────────────────
+    if VALLEY_SCRIPT in html:
+        print("the valley   : already wired")
+    elif not os.path.isfile(os.path.join(os.path.abspath(args.out), "valley.js")):
+        print("the valley   : SKIPPED — valley.js missing at the site root")
+    else:
+        m = re.search(r"</title>", html)
+        if not m:
+            print("the valley   : SKIPPED — no <title> to anchor to")
+        else:
+            html = html[:m.end()] + "\n" + VALLEY_SCRIPT + html[m.end():]
+            print("the valley   : script wired")
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
