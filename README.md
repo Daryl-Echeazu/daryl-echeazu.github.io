@@ -139,15 +139,24 @@ preview images hard:
 python build.py export.html --card-version 2
 ```
 
-**11. Extracts the inlined assets to real files.** All 35 assets are decoded
-(and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
-instead of base64.
+**11. Accessibility: language and reduced motion.** Neither `<html>` carried a
+`lang`, so screen readers had no pronunciation dictionary to pick — added to
+both (the outer tag is what crawlers parse; the template's is what actually
+becomes `documentElement`). And `prefers-reduced-motion` was not honoured at
+all, despite a headline that cross-fades with a blur every 4.5s; animations and
+transitions now collapse to ~0 for anyone who has asked their OS for less
+motion. State still changes, nothing moves.
+
+**12. Extracts the inlined assets to real files.** All 35 assets are decoded
+(and gunzipped) into `assets/`, images re-encoded to WebP, and the manifest
+rewritten to reference URLs instead of base64.
 
 | | before | after |
 |---|---|---|
-| `index.html` | 8.67 MB | **124 KB** |
-| bytes before first paint | 8.67 MB | **124 KB** |
+| `index.html` | 8.67 MB | **135 KB** |
+| bytes before first paint | 8.67 MB | **135 KB** |
 | assets | inlined, re-downloaded every visit | cached, parallel, lazy-loaded |
+| image payload | 5.62 MB JPEG/PNG | **4.14 MB WebP** |
 
 Only the ~11 assets the first screen actually needs are fetched on load; the
 rest arrive when you navigate to them.
@@ -158,6 +167,7 @@ safe.
 Useful flags:
 
 ```sh
+python build.py export.html --no-webp         # keep JPEG/PNG instead of WebP
 python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
