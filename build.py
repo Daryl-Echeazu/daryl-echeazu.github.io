@@ -155,13 +155,26 @@ LANG = [
 # effectively zero rather than removing them, so state still changes (the word
 # still swaps) without anything moving or blurring.
 REDUCED_MOTION = (
-    "\\n  /* [build.py] Honour the OS 'reduce motion' setting. */\\n"
+    "\\n  /* [build.py] Honour the OS 'reduce motion' setting — for MOTION.\\n"
+    "     The setting exists for movement: travel, parallax, scaling, spin. A\\n"
+    "     cross-fade does not cause vestibular trouble, so blanking every\\n"
+    "     transition (the first version did) just deletes the headline's fade\\n"
+    "     for anyone whose OS has the flag set — which on Windows includes\\n"
+    "     'animation effects off' and some battery-saver modes. That is a lot\\n"
+    "     of people losing the site's character for no accessibility gain.\\n"
+    "\\n"
+    "     So: keyframe animations (fadeUp, winPop — these travel and scale) are\\n"
+    "     collapsed, and transitions are restricted to properties that do not\\n"
+    "     move anything. Any transform transition, such as the book-spine lift,\\n"
+    "     drops out of the list and stops; opacity and blur keep their timing,\\n"
+    "     so the headline still cross-fades. */\\n"
     "  @media (prefers-reduced-motion: reduce) {\\n"
     "    *, *::before, *::after {\\n"
     "      animation-duration: 0.01ms !important;\\n"
     "      animation-iteration-count: 1 !important;\\n"
-    "      transition-duration: 0.01ms !important;\\n"
     "      scroll-behavior: auto !important;\\n"
+    "      transition-property: opacity, filter, color, background-color,\\n"
+    "        border-color, box-shadow !important;\\n"
     "    }\\n"
     "  }\\n"
 )

@@ -143,9 +143,13 @@ python build.py export.html --card-version 2
 `lang`, so screen readers had no pronunciation dictionary to pick — added to
 both (the outer tag is what crawlers parse; the template's is what actually
 becomes `documentElement`). And `prefers-reduced-motion` was not honoured at
-all, despite a headline that cross-fades with a blur every 4.5s; animations and
-transitions now collapse to ~0 for anyone who has asked their OS for less
-motion. State still changes, nothing moves.
+all. It is now — but only for *motion*. The setting exists for movement: travel,
+parallax, scaling. A cross-fade causes no vestibular trouble, so blanking every
+transition (the first attempt) simply deleted the headline's fade for anyone
+whose OS has the flag set, which on Windows includes "animation effects off" and
+some battery-saver modes. Keyframe animations are collapsed and transitions are
+restricted to non-moving properties, so the book-spine lift stops while the
+headline still cross-fades.
 
 **12. Extracts the inlined assets to real files.** All 35 assets are decoded
 (and gunzipped) into `assets/`, images re-encoded to WebP, and the manifest
