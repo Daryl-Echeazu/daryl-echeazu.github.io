@@ -139,6 +139,9 @@ SPINE_TO = (
 # documentElement, but the file has already executed by then and its listeners
 # live on `document`, so it survives — the same reason the icon link had to be
 # duplicated into the template instead.
+# The loading cover must be FIRST: it has to be up before the bundler
+# replaces documentElement and the raw {{ }} template flashes.
+LOADING_SCRIPT = '  <script src="loading.js"></script>'
 VALLEY_SCRIPT = '  <script src="valley.js"></script>'
 
 # PROTOTYPE. Parallax between the hero photograph and the type over it.
@@ -596,11 +599,14 @@ def main():
             print("the valley   : SKIPPED — no <title> to anchor to")
         else:
             extra = VALLEY_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "loading.js")):
+                extra = LOADING_SCRIPT + "\n" + extra    # must load first
             if os.path.isfile(os.path.join(os.path.abspath(args.out), "hero-parallax.js")):
                 extra += "\n" + PARALLAX_SCRIPT
             html = html[:m.end()] + "\n" + extra + html[m.end():]
-            print("the valley   : script wired%s"
-                  % (" (+ hero parallax)" if PARALLAX_SCRIPT in extra else ""))
+            print("scripts      : valley%s%s"
+                  % (" + loading" if LOADING_SCRIPT in extra else "",
+                     " + parallax" if PARALLAX_SCRIPT in extra else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0

@@ -171,6 +171,31 @@ python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
 
+### Loading screen
+
+`loading.js` covers the gap between first paint and the app actually being
+rendered. Measured before writing it, because the gap has two distinct wrong
+states rather than one:
+
+| | |
+|---|---|
+| ~470–750ms | the raw template is in the DOM with **204 unresolved `{{ }}`** — "DARYL ECHEAZU `{{ t.label }}`" is on screen |
+| ~1040–1620ms | body blank while Babel compiles and the app mounts |
+| ~1900ms | rendered |
+
+So the cover goes up immediately and stays until bindings are resolved *and* the
+hero image has decoded — not merely until DOMContentLoaded.
+
+The hard part is that the bundler replaces `documentElement`, taking the `<body>`
+the overlay lives in with it. Re-attaching on the next animation frame is **not**
+fast enough: rAF is starved while the app compiles, and the cover was measured
+disappearing 71ms into a fast load — exactly the window it exists to hide. A
+`MutationObserver` on `document` re-attaches it as a microtask instead.
+
+Verified across throttled, cold and warm loads: **0 frames** with the raw
+template exposed. A 9s hard timeout tears it down regardless, so it can never
+trap anyone.
+
 ### Experience
 
 The selected company takes the site's gold gradient — the same treatment as the
