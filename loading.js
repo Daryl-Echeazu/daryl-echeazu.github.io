@@ -44,15 +44,17 @@
     // Asymmetry is what makes it read as El Capitan rather than a bell curve:
     // a steep west face, a summit set left of centre, and a long shoulder
     // falling away east. A fainter ridge behind gives it a valley to stand in.
+    // Straight segments throughout, not curves. Two earlier attempts used bezier
+    // shoulders and both read as a bell curve however the summit was sharpened —
+    // the roundness was the problem, not the apex. Faceted lines read as rock.
+    // The summit is broad and set left of centre, with a long shoulder falling
+    // east: El Capitan's proportions rather than a generic peak.
     el.innerHTML =
       '<svg class="boot-peak" viewBox="0 0 120 72" aria-hidden="true">' +
-      '<path class="ridge" pathLength="100" d="M0,66 C14,64 24,57 36,50' +
-      ' C46,44 55,46 64,52 C78,60 94,65 120,66"/>' +
-      // Short straight segments at the summit keep it crisp; smooth curves all
-      // the way over read as a bell curve rather than granite.
-      '<path class="peak" pathLength="100" d="M3,65 C11,64 15,57 19,45' +
-      ' C23,32 29,17 39,10 L47,6 L52,9 C58,14 62,24 66,34' +
-      ' C71,46 78,55 89,60 C99,64 108,65 117,65"/>' +
+      '<polyline class="ridge" pathLength="100"' +
+      ' points="0,66 24,58 40,45 54,50 70,41 88,57 120,66"/>' +
+      '<polyline class="peak" pathLength="100"' +
+      ' points="4,65 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,65"/>' +
       '<path class="base" pathLength="100" d="M0,66.5 L120,66.5"/>' +
       '</svg>' +
       '<div class="boot-mark">DARYL ECHEAZU</div>';
@@ -67,7 +69,8 @@
       // clearing rather than the page blinking.
       "#boot[data-off]{opacity:0;transform:translateY(-10px);pointer-events:none}",
       "#boot .boot-peak{width:150px;height:auto;overflow:visible}",
-      "#boot .boot-peak path{fill:none;stroke-linecap:round;stroke-linejoin:round;",
+      "#boot .boot-peak path,#boot .boot-peak polyline{fill:none;",
+      "stroke-linecap:round;stroke-linejoin:round;",
       "stroke-dasharray:100;stroke-dashoffset:100}",
       // Staggered so the valley floor arrives first, then the ridge, then the
       // wall — it builds rather than appearing all at once.
