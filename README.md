@@ -196,7 +196,9 @@ scaled to fit, the whole valley became a decorative strip with unreadable labels
 and 18px tap targets. Only the map scrolls sideways; the page does not.
 
 To add or move a place, edit `PLACES` — but the pins sit *on* the silhouette in
-`terrain()`, so the coordinates and that path have to move together.
+`terrain()`, and the conifers are planted on `floorY()`, so those move together.
+Label side is per-place (`lab: "above" | "below"`): Vernal Fall is labelled above
+because below, the text runs straight through the falls drawn at the same x.
 
 ## Known issues (pre-existing, fix in Claude Design)
 

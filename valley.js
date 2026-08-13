@@ -34,8 +34,10 @@
     { id: "res3", name: "Merced River",  x: 400, y: 332, lab: "below", note: "Runs the length of the valley floor." },
     { id: "res8", name: "Glacier Point", x: 612, y: 210, lab: "above", note: "The south rim, looking straight across at Half Dome." },
     { id: "res1", name: "Mirror Lake",   x: 690, y: 306, lab: "below", note: "East end, under Half Dome." },
-    { id: "res5", name: "Mist Trail",    x: 772, y: 262, lab: "above", note: "The spray, and what it does to the light." },
-    { id: "res2", name: "Vernal Fall",   x: 858, y: 250, lab: "below", note: "Top of the Mist Trail's first pitch." },
+    { id: "res5", name: "Mist Trail",    x: 772, y: 262, lab: "below", note: "The spray, and what it does to the light." },
+    // Labelled above: below, the text ran straight through the falls drawn at
+    // this same x.
+    { id: "res2", name: "Vernal Fall",   x: 858, y: 250, lab: "above", note: "Top of the Mist Trail's first pitch." },
     { id: "res4", name: "Liberty Cap",   x: 910, y: 192, lab: "above", note: "The dome standing over Nevada Fall." }
   ];
 
@@ -52,9 +54,15 @@
       "#valley{position:fixed;inset:0;z-index:99999;display:none;",
       "background:" + BG + ";color:" + INK + ";",
       "font-family:'Geist',Helvetica,sans-serif;overflow-y:auto;",
-      "animation:valleyIn .28s cubic-bezier(.4,0,.2,1)}",
+      "animation:valleyIn .34s cubic-bezier(.4,0,.2,1)}",
       "#valley[data-open]{display:block}",
-      "@keyframes valleyIn{from{opacity:0}to{opacity:1}}",
+      // Closing mirrors opening — it kept the fade on the way in and cut hard on
+      // the way out, which read as a bug rather than a transition.
+      "#valley[data-closing]{animation:valleyOut .26s cubic-bezier(.4,0,.2,1) forwards}",
+      "@keyframes valleyIn{from{opacity:0;transform:scale(.985)}",
+      "to{opacity:1;transform:none}}",
+      "@keyframes valleyOut{from{opacity:1;transform:none}",
+      "to{opacity:0;transform:scale(.99)}}",
       "#valley .vwrap{max-width:1180px;margin:0 auto;padding:26px 22px 56px;box-sizing:border-box}",
       "#valley .vhead{display:flex;align-items:baseline;justify-content:space-between;gap:16px}",
       "#valley .vtitle{font-family:'Instrument Serif',Georgia,serif;font-size:clamp(30px,5vw,52px);",
@@ -68,13 +76,24 @@
       "#valley svg{width:100%;height:auto;max-height:38vh;display:block;margin-top:18px;touch-action:manipulation}",
       "#valley .pin{cursor:pointer}",
       "#valley .pin circle.hit{fill:transparent}",
-      "#valley .pin circle.dot{fill:" + MUTED + ";transition:r .18s ease,fill .18s ease}",
+      // Overshooting easing so the dot springs rather than eases — at 0.18s
+      // linear it barely registered as a transition at all.
+      "#valley .pin circle.dot{fill:" + MUTED + ";",
+      "transition:r .34s cubic-bezier(.2,1.5,.4,1),fill .28s ease,filter .28s ease}",
       "#valley .pin text{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.1em;",
-      "fill:" + MUTED + ";transition:fill .18s ease}",
-      "#valley .pin:hover circle.dot,#valley .pin[data-on] circle.dot{fill:" + GOLD + ";r:6}",
-      "#valley .pin:hover text,#valley .pin[data-on] text{fill:" + INK + "}",
+      "fill:" + MUTED + ";transition:fill .28s ease,letter-spacing .34s ease}",
+      "#valley .pin:hover circle.dot{fill:" + GOLD + ";r:6.5}",
+      "#valley .pin[data-on] circle.dot{fill:" + GOLD + ";r:7;",
+      "filter:drop-shadow(0 0 7px oklch(0.86 0.13 85 / .65))}",
+      "#valley .pin:hover text{fill:" + INK + "}",
+      "#valley .pin[data-on] text{fill:" + INK + ";letter-spacing:.16em}",
+      // A slow sonar ping on the selected point, so the eye can find it again
+      // after looking away at the photograph.
+      "#valley .pin circle.ring{fill:none;stroke:" + GOLD + ";stroke-width:1.4;opacity:0}",
+      "#valley .pin[data-on] circle.ring{animation:vping 2.1s cubic-bezier(.2,.7,.3,1) infinite}",
+      "@keyframes vping{0%{r:7;opacity:.55}70%{opacity:0}100%{r:22;opacity:0}}",
       "#valley .pin:focus{outline:none}",
-      "#valley .pin:focus-visible circle.dot{fill:" + GOLD + ";r:7}",
+      "#valley .pin:focus-visible circle.dot{fill:" + GOLD + ";r:7.5}",
       "#valley .vcard{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px;",
       "align-items:center;margin-top:26px;min-height:230px}",
       "#valley .vphoto{width:100%;aspect-ratio:3/2;object-fit:cover;background:oklch(0.18 0.005 260);",
@@ -106,26 +125,79 @@
   // stays flat until the Merced canyon climbs away east past the falls. Kept
   // deliberately flat and line-art — it has to sit next to photographs without
   // competing with them.
+  // Height of the valley floor at x — must track the floor path drawn below.
+  function floorY(x) {
+    var pts = [[0, 338], [340, 340], [560, 338], [700, 336],
+               [790, 318], [880, 286], [1000, 266]];
+    for (var i = 1; i < pts.length; i++) {
+      if (x <= pts[i][0]) {
+        var a = pts[i - 1], b = pts[i];
+        return a[1] + (b[1] - a[1]) * ((x - a[0]) / (b[0] - a[0]));
+      }
+    }
+    return pts[pts.length - 1][1];
+  }
+
   function terrain() {
-    return [
-      // far ridge, for depth
+    var out = [
+      // Atmospheric perspective: distance reads as lighter and bluer, so the
+      // ridges separate without any outlines.
+      '<defs>',
+      '<linearGradient id="vsky" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="oklch(0.20 0.022 250)"/>',
+      '<stop offset="1" stop-color="oklch(0.135 0.006 260)"/></linearGradient>',
+      '<linearGradient id="vfar" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="oklch(0.205 0.020 252)"/>',
+      '<stop offset="1" stop-color="oklch(0.160 0.010 258)"/></linearGradient>',
+      '<linearGradient id="vnear" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="oklch(0.255 0.010 258)"/>',
+      '<stop offset="1" stop-color="oklch(0.185 0.006 260)"/></linearGradient>',
+      '<linearGradient id="vfall" x1="0" y1="0" x2="0" y2="1">',
+      '<stop offset="0" stop-color="oklch(0.86 0.03 235)" stop-opacity=".85"/>',
+      '<stop offset="1" stop-color="oklch(0.70 0.03 235)" stop-opacity=".15"/></linearGradient>',
+      '</defs>',
+      '<rect x="0" y="96" width="1000" height="292" fill="url(#vsky)"/>',
+      // far ridge
       '<path d="M0,258 C120,238 210,224 300,242 C420,266 520,226 640,220',
-      ' C764,214 862,190 1000,208 L1000,380 L0,380 Z" fill="oklch(0.168 0.006 260)"/>',
-      // the valley itself
+      ' C764,214 862,190 1000,208 L1000,388 L0,388 Z" fill="url(#vfar)"/>',
+      // the valley itself — the silhouette the pins are placed against
       '<path d="M0,306 L118,302 L146,158 C150,134 166,124 196,124 L246,124',
       ' C274,124 286,140 292,168 L330,258 C372,300 434,308 500,306 L558,302',
       ' C584,266 598,232 614,214 C632,234 650,270 670,296 L700,308',
       ' C722,302 738,284 752,246 C762,182 786,152 814,152 C842,152 856,180 858,222',
       ' L874,264 C886,238 898,208 910,196 C926,208 942,242 962,270 L1000,288',
-      ' L1000,380 L0,380 Z" fill="oklch(0.213 0.007 260)"/>',
-      // Vernal Fall, dropping from the lip the pin sits on
-      '<path d="M857,252 L861,252 L863,300 L855,300 Z" fill="oklch(0.62 0.02 240)" opacity=".55"/>',
+      ' L1000,388 L0,388 Z" fill="url(#vnear)"/>'
+    ];
+    // El Capitan's face is read by its vertical striations more than its outline.
+    for (var i = 0; i < 7; i++) {
+      var x = 158 + i * 19;
+      out.push('<path d="M' + x + ',' + (132 + i % 3 * 5) + ' L' + (x + 5) + ',292"',
+               ' stroke="oklch(0.34 0.008 260)" stroke-width="1.2" fill="none"',
+               ' opacity="' + (0.30 + (i % 3) * 0.12).toFixed(2) + '"/>');
+    }
+    out.push(
+      // Vernal Fall, dropping from the lip the pin sits on, with spray at its foot
+      '<path d="M856,252 L862,252 L865,302 L853,302 Z" fill="url(#vfall)"/>',
+      '<ellipse cx="859" cy="303" rx="17" ry="5" fill="oklch(0.78 0.02 235)" opacity=".16"/>',
+      '<ellipse cx="859" cy="300" rx="10" ry="3.4" fill="oklch(0.86 0.02 235)" opacity=".14"/>',
       // valley floor and the Merced running through it
-      '<path d="M0,338 L340,340 L560,338 L700,336 L790,318 L880,286 L1000,266 L1000,380 L0,380 Z"',
-      ' fill="oklch(0.252 0.008 260)"/>',
+      '<path d="M0,338 L340,340 L560,338 L700,336 L790,318 L880,286 L1000,266',
+      ' L1000,388 L0,388 Z" fill="oklch(0.238 0.008 260)"/>',
       '<path d="M40,344 C240,350 420,342 600,340 C690,338 748,326 812,300"',
-      ' fill="none" stroke="oklch(0.46 0.035 240)" stroke-width="2.5" opacity=".8"/>'
-    ].join("");
+      ' fill="none" stroke="oklch(0.52 0.045 238)" stroke-width="2.6" opacity=".75"/>'
+    );
+    // A sparse conifer line for scale against the walls. Each tree is planted on
+    // the floor path rather than a flat baseline, or the eastern ones float as
+    // the canyon climbs.
+    for (var t = 0; t < 26; t++) {
+      var tx = 26 + t * 37 + (t % 3) * 6;
+      var th = 9 + (t % 4) * 3;
+      var base = floorY(tx);
+      out.push('<path d="M' + tx + ',' + (base - th).toFixed(1) +
+               ' l' + (th / 2.6).toFixed(1) + ',' + th +
+               ' l' + (-th / 1.3).toFixed(1) + ',0 Z" fill="oklch(0.20 0.02 155)" opacity=".55"/>');
+    }
+    return out.join("");
   }
 
   function build() {
@@ -147,6 +219,7 @@
         '<g class="pin" tabindex="0" role="button" data-i="' + i + '"',
         ' aria-label="' + p.name + '">',
         '<circle class="hit" cx="' + p.x + '" cy="' + p.y + '" r="30"/>',
+        '<circle class="ring" cx="' + p.x + '" cy="' + p.y + '" r="7"/>',
         '<circle class="dot" cx="' + p.x + '" cy="' + p.y + '" r="4.5"/>',
         '<text x="' + p.x + '" y="' + ty + '" text-anchor="' + anchor + '">',
         p.name.toUpperCase(), '</text></g>'
@@ -220,10 +293,16 @@
     root.querySelector(".vclose").focus();
   }
 
+  var closeTimer = null;
   function close() {
-    if (!root) return;
-    root.removeAttribute("data-open");
-    document.body.style.overflow = "";
+    if (!root || !root.hasAttribute("data-open") || root.hasAttribute("data-closing")) return;
+    root.setAttribute("data-closing", "");
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function () {          // matches valleyOut's .26s
+      root.removeAttribute("data-open");
+      root.removeAttribute("data-closing");
+      document.body.style.overflow = "";
+    }, 260);
   }
 
   document.addEventListener("keydown", function (e) {
