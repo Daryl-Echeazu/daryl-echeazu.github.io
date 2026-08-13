@@ -237,9 +237,14 @@ It is deliberately **not** gated on `prefers-reduced-motion`, matching the rest
 of the site — gating it silently disabled the whole effect on a machine with
 that flag set, which is most Windows installs with animation effects off.
 
-Strength is one constant, `DEPTH` at the top of the file. At 1.5 the photo
-travels ~35px and the headline ~60px in the opposite direction across the
-screen. The photo's `scale` has to stay ahead of its travel or its edges show.
+Only the photograph moves; the type stays put. An earlier version drifted the
+headline and caption against it, which made the words feel unmoored — they are
+the fixed thing you read, and the view behind them shifts. The photo travels
+opposite the pointer, so it reads as looking past the type.
+
+Strength is one constant, `DEPTH` at the top of the file. At 1 the photo travels
+~51px across the screen. Its `scale` has to stay ahead of that travel or its
+edges come into frame.
 
 To remove: delete the file and its line in `build.py`. Nothing else refers to it.
 

@@ -4,12 +4,13 @@
  * different amounts as you move the pointer, so the frame reads as a space
  * rather than a flat image.
  *
- * An honest limitation up front: this is ONE flat photograph, so there are no
- * true depth planes to separate. What is available is parallax between the
- * photo and the elements sitting on it — the headline, the caption, the links.
- * Moving those against the image, with the image drifting slightly the other
- * way, is what sells depth here. A real multi-plane effect would need the
- * subject cut out from the background, which is a different job.
+ * Only the photograph moves; the type stays where it is. The words are the
+ * fixed thing you read, and the view behind them shifts — moving the type too
+ * made it feel unmoored.
+ *
+ * An honest limitation: this is ONE flat photograph, so there are no true depth
+ * planes to separate. Real multi-plane depth would need the subject cut out
+ * from the background, which is a different job.
  *
  * Same survival rules as valley.js: loaded from the outer head (already
  * executed by the time it is replaced), listeners on `document`, and element
@@ -20,16 +21,17 @@
 (function () {
   "use strict";
 
-  // How far each layer travels, in px at full deflection. The photo moves least
-  // and opposite the type — that opposition is what the eye reads as depth.
-  // Scale on the photo has to stay ahead of its travel or the edges show.
-  // Tune the whole effect with one number: DEPTH.
-  var DEPTH = 1.5;
+  // Only the photograph moves. An earlier version also drifted the headline,
+  // caption and links against it, which made the type feel unmoored — the words
+  // are the fixed thing you read, and the view behind them shifts. The image
+  // travels opposite the pointer, so it reads as looking past the type rather
+  // than the type sliding around.
+  //
+  // Tune with one number: DEPTH. `scale` must stay ahead of the travel or the
+  // photo's edges come into frame.
+  var DEPTH = 1;
   var LAYERS = [
-    { pick: heroImage,   x: -14 * DEPTH, y: -9 * DEPTH, scale: 1.07 },
-    { pick: heroHeading, x: 24 * DEPTH,  y: 14 * DEPTH },
-    { pick: heroCaption, x: 13 * DEPTH,  y: 8 * DEPTH },
-    { pick: heroLinks,   x: 17 * DEPTH,  y: 10 * DEPTH }
+    { pick: heroImage, x: -30 * DEPTH, y: -18 * DEPTH, scale: 1.08 }
   ];
 
   var tx = 0, ty = 0, cx = 0, cy = 0;   // target and current, normalised -1..1
