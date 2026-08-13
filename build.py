@@ -163,6 +163,72 @@ VALLEY_CSS = (
     "  }\\n"
 )
 
+# ── 12. Experience page ──────────────────────────────────────────────────────
+# The page is a stack of six big serif names in a flat grey, with the selected
+# one merely a little brighter. Nothing signals that it is a list you can move
+# through, and the selected entry gets no more visual weight than a hover state.
+#
+# Three changes, no new content:
+#   - number the entries, so it reads as an index of work rather than a pile of
+#     logos, and the empty left margin does some work
+#   - the selected company takes the site's gold gradient, the same treatment as
+#     the rotating headline word and the scene quotes, tying the page in
+#   - the row responds to the pointer: it steps right and its number lights
+#
+# Selectors verified against every tab: the row matcher hits 6 elements on
+# Experience and 0 everywhere else, and the "selected" matcher resolves to
+# exactly the one highlighted name.
+EXPERIENCE_CSS = (
+    "\\n  /* [build.py] Experience: make the list read as an index. */\\n"
+    "  [style*='overflow-y: auto'] { counter-reset: xpn; }\\n"
+    "  [style*='cursor: default'][style*='gap: 22px'] {\\n"
+    "    counter-increment: xpn;\\n"
+    "    position: relative;\\n"
+    "    padding-left: 58px !important;\\n"
+    "    transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.25, 1);\\n"
+    "  }\\n"
+    "  [style*='cursor: default'][style*='gap: 22px']::before {\\n"
+    "    content: counter(xpn, decimal-leading-zero);\\n"
+    "    position: absolute;\\n"
+    "    left: 0;\\n"
+    "    top: 0.72em;\\n"
+    "    font-family: 'Geist Mono', monospace;\\n"
+    "    font-size: 11px;\\n"
+    "    letter-spacing: 0.18em;\\n"
+    "    color: oklch(0.38 0.005 260);\\n"
+    "    transition: color 0.42s cubic-bezier(0.2, 0.8, 0.25, 1);\\n"
+    "  }\\n"
+    "  [style*='cursor: default'][style*='gap: 22px']:hover {\\n"
+    "    transform: translateX(9px);\\n"
+    "  }\\n"
+    "  [style*='cursor: default'][style*='gap: 22px']:hover::before {\\n"
+    "    color: oklch(0.86 0.13 85);\\n"
+    "  }\\n"
+    "  /* The selected company in the site's gold. The padding/negative-margin\\n"
+    "     pair is required: background-clip: text paints only inside the padding\\n"
+    "     box, and without it the descender on \\\"Google\\\" is sheared off. */\\n"
+    "  [style*='clamp(38px, 4.6vw, 58px)']:not([style*='oklch(0.36']) {\\n"
+    "    background: linear-gradient(105deg, oklch(0.78 0.14 78),\\n"
+    "      oklch(0.94 0.11 95) 50%, oklch(0.82 0.13 85));\\n"
+    "    -webkit-background-clip: text;\\n"
+    "    background-clip: text;\\n"
+    "    -webkit-text-fill-color: transparent;\\n"
+    "    padding-bottom: 0.34em;\\n"
+    "    margin-bottom: -0.34em;\\n"
+    "  }\\n"
+    "  /* On a phone the indent is width the names need — \\\"Oracle Trading\\\"\\n"
+    "     wraps at 58px. */\\n"
+    "  @media (max-width: 760px) {\\n"
+    "    [style*='cursor: default'][style*='gap: 22px'] {\\n"
+    "      padding-left: 36px !important;\\n"
+    "    }\\n"
+    "    [style*='cursor: default'][style*='gap: 22px']::before {\\n"
+    "      font-size: 10px;\\n"
+    "      letter-spacing: 0.12em;\\n"
+    "    }\\n"
+    "  }\\n"
+)
+
 # ── 10. Accessibility: language attribute ────────────────────────────────────
 # Neither <html> carried a lang attribute. Screen readers use it to pick a
 # pronunciation dictionary, so without it an English page may be read with the
@@ -290,6 +356,7 @@ PADS = [
 NAV_CSS_ANCHOR = "\\n<\\u002Fstyle>\\n<\\u002Fhelmet>"
 NAV_CSS = (
     VALLEY_CSS +
+    EXPERIENCE_CSS +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"

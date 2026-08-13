@@ -171,6 +171,24 @@ python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
 
+### Experience
+
+The page was six large serif names in a flat grey, with the selected one only
+slightly brighter — nothing said it was a list you could move through. The build
+numbers the entries so it reads as an index (and the empty left margin does some
+work), gives the selected company the site's gold gradient — the same treatment
+as the rotating headline word — and steps the row right with its number lighting
+as the pointer passes.
+
+The gold needs the `padding-bottom` / negative `margin-bottom` pair:
+`background-clip: text` paints only inside the padding box, so without it the
+descender on "Google" is sheared off.
+
+Selectors were checked against every tab before use: the row matcher hits 6
+elements on Experience and 0 elsewhere, and "selected" resolves to exactly the
+one highlighted name. On phones the indent drops to 36px, since there it is
+width the names need.
+
 ## The Valley
 
 `valley.js` adds an interactive west-to-east section of Yosemite. The About page
