@@ -130,7 +130,7 @@ SPINE_TO = (
     '        })(Math.round(b.h * (mob ? 0.95 : 1.08)), b.title.length),\\n'
     '        h: Math.round(b.h * (mob ? 0.95 : 1.08)) + \\"px\\",')
 
-# ── 10. Accessibility: language and reduced motion ───────────────────────────
+# ── 10. Accessibility: language attribute ────────────────────────────────────
 # Neither <html> carried a lang attribute. Screen readers use it to pick a
 # pronunciation dictionary, so without it an English page may be read with the
 # wrong phonetics; search engines use it too. Both tags need it: the outer one
@@ -147,37 +147,6 @@ LANG = [
      '\\n<link rel=\\"icon\\" type=\\"image/png\\" href=\\"favicon.png\\">'
      '\\n<link rel=\\"apple-touch-icon\\" href=\\"favicon.png\\">'),
 ]
-
-# The site animates a good deal — the headline word cross-fades with a blur
-# every 4.5s, sections fade up, windows pop. For people who get motion sickness
-# from that, the OS-level "reduce motion" setting is how they ask for less; it
-# was not being honoured at all. Collapse animations and transitions to
-# effectively zero rather than removing them, so state still changes (the word
-# still swaps) without anything moving or blurring.
-REDUCED_MOTION = (
-    "\\n  /* [build.py] Honour the OS 'reduce motion' setting — for MOTION.\\n"
-    "     The setting exists for movement: travel, parallax, scaling, spin. A\\n"
-    "     cross-fade does not cause vestibular trouble, so blanking every\\n"
-    "     transition (the first version did) just deletes the headline's fade\\n"
-    "     for anyone whose OS has the flag set — which on Windows includes\\n"
-    "     'animation effects off' and some battery-saver modes. That is a lot\\n"
-    "     of people losing the site's character for no accessibility gain.\\n"
-    "\\n"
-    "     So: keyframe animations (fadeUp, winPop — these travel and scale) are\\n"
-    "     collapsed, and transitions are restricted to properties that do not\\n"
-    "     move anything. Any transform transition, such as the book-spine lift,\\n"
-    "     drops out of the list and stops; opacity and blur keep their timing,\\n"
-    "     so the headline still cross-fades. */\\n"
-    "  @media (prefers-reduced-motion: reduce) {\\n"
-    "    *, *::before, *::after {\\n"
-    "      animation-duration: 0.01ms !important;\\n"
-    "      animation-iteration-count: 1 !important;\\n"
-    "      scroll-behavior: auto !important;\\n"
-    "      transition-property: opacity, filter, color, background-color,\\n"
-    "        border-color, box-shadow !important;\\n"
-    "    }\\n"
-    "  }\\n"
-)
 
 # ── 9. Rotating headline word: quicker cycle ─────────────────────────────────
 # The word changed every 7s with a 0.7s crossfade. Down to 4.5s with a 0.5s
@@ -287,7 +256,6 @@ PADS = [
 # is the only stable thing about an inline-styled element.
 NAV_CSS_ANCHOR = "\\n<\\u002Fstyle>\\n<\\u002Fhelmet>"
 NAV_CSS = (
-    REDUCED_MOTION +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"
@@ -453,31 +421,6 @@ def safe_name(name):
     return re.sub(r"[^A-Za-z0-9._-]", "_", name) or "asset"
 
 
-def to_webp(raw, quality):
-    """Re-encode an image as WebP. Measured on this site's photos: 5.62 MB of
-    JPEG/PNG becomes 3.62 MB, a 36% cut, with no visible difference at q82.
-    Supported by every browser since ~2020 (Safari 14+), and the runtime
-    rewrites every reference through the manifest, so nothing points at the old
-    extension. Returns (bytes, mime) or (raw, None) if it is not a win."""
-    try:
-        from PIL import Image
-    except ImportError:
-        return raw, None
-    try:
-        im = Image.open(io.BytesIO(raw))
-        im.load()
-        has_alpha = im.mode in ("RGBA", "LA", "P") and "transparency" in im.info or im.mode in ("RGBA", "LA")
-        im = im.convert("RGBA" if has_alpha else "RGB")
-        out = io.BytesIO()
-        im.save(out, "WEBP", quality=quality, method=6)
-        new = out.getvalue()
-        if len(new) < len(raw) * 0.95:      # only if meaningfully smaller
-            return new, "image/webp"
-        return raw, None
-    except Exception:
-        return raw, None
-
-
 def recompress_jpeg(raw, quality):
     """Re-encode a JPEG smaller without resizing. Returns raw unchanged if it
     fails or if the result is not actually smaller."""
@@ -510,8 +453,6 @@ def main():
     ap.add_argument("--assets", default="assets", help="asset subdirectory name")
     ap.add_argument("--quality", type=int, default=85, help="JPEG quality (default: 85)")
     ap.add_argument("--no-recompress", action="store_true", help="extract byte-identical images")
-    ap.add_argument("--no-webp", dest="webp", action="store_false",
-                    help="keep JPEG/PNG instead of converting images to WebP")
     ap.add_argument("--card-version", type=int, default=1,
                     help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
     args = ap.parse_args()
@@ -659,7 +600,6 @@ def main():
     os.makedirs(assetdir, exist_ok=True)
 
     slim, used, saved_bytes, notes = {}, set(), 0, []
-    webp_count = 0
     total_raw = 0
 
     for uuid, entry in sorted(manifest.items()):
@@ -672,26 +612,14 @@ def main():
         before = len(raw)
 
         mime = entry["mime"]
-        if mime in ("image/jpeg", "image/png") and not args.no_recompress:
-            if args.webp:
-                raw2, new_mime = to_webp(raw, args.quality)
-                if new_mime:
-                    raw, mime = raw2, new_mime
-                    webp_count += 1
-                elif mime == "image/jpeg":
-                    raw, why = recompress_jpeg(raw, args.quality)
-                    if why:
-                        notes.append("%s: %s" % (uuid[:8], why))
-            elif mime == "image/jpeg":
-                raw, why = recompress_jpeg(raw, args.quality)
-                if why:
-                    notes.append("%s: %s" % (uuid[:8], why))
+        if mime == "image/jpeg" and not args.no_recompress:
+            raw, why = recompress_jpeg(raw, args.quality)
+            if why:
+                notes.append("%s: %s" % (uuid[:8], why))
         saved_bytes += before - len(raw)
         total_raw += len(raw)
 
         name = uuid2name.get(uuid) or (uuid + EXT_BY_MIME.get(mime, ".bin"))
-        if mime == "image/webp":
-            name = os.path.splitext(name)[0] + ".webp"
         name = safe_name(name)
         stem, ext = os.path.splitext(name)
         n = 2
@@ -743,8 +671,6 @@ def main():
 
     new_size = len(html.encode("utf-8"))
     print("\nassets      : %d files, %.2f MB in %s/" % (len(slim), total_raw / 1e6, args.assets))
-    if webp_count:
-        print("webp        : %d images converted" % webp_count)
     if saved_bytes:
         print("recompressed: saved %.2f MB" % (saved_bytes / 1e6))
     for n in notes:

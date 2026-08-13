@@ -139,28 +139,24 @@ preview images hard:
 python build.py export.html --card-version 2
 ```
 
-**11. Accessibility: language and reduced motion.** Neither `<html>` carried a
-`lang`, so screen readers had no pronunciation dictionary to pick — added to
-both (the outer tag is what crawlers parse; the template's is what actually
-becomes `documentElement`). And `prefers-reduced-motion` was not honoured at
-all. It is now — but only for *motion*. The setting exists for movement: travel,
-parallax, scaling. A cross-fade causes no vestibular trouble, so blanking every
-transition (the first attempt) simply deleted the headline's fade for anyone
-whose OS has the flag set, which on Windows includes "animation effects off" and
-some battery-saver modes. Keyframe animations are collapsed and transitions are
-restricted to non-moving properties, so the book-spine lift stops while the
-headline still cross-fades.
+**11. Adds a `lang` attribute.** Neither `<html>` carried one, so screen readers
+had no pronunciation dictionary to pick — added to both (the outer tag is what
+crawlers parse; the template's is what actually becomes `documentElement`).
+
+The build deliberately does **not** honour `prefers-reduced-motion`: the
+animation is the point of the site, and it should play for everyone. Note this
+means visitors who have asked their OS for less motion still get the full
+headline cross-fade, the fade-ups and the window pops.
 
 **12. Extracts the inlined assets to real files.** All 35 assets are decoded
-(and gunzipped) into `assets/`, images re-encoded to WebP, and the manifest
-rewritten to reference URLs instead of base64.
+(and gunzipped) into `assets/`, and the manifest is rewritten to reference URLs
+instead of base64. Images keep their original JPEG/PNG encoding.
 
 | | before | after |
 |---|---|---|
-| `index.html` | 8.67 MB | **135 KB** |
-| bytes before first paint | 8.67 MB | **135 KB** |
+| `index.html` | 8.67 MB | **134 KB** |
+| bytes before first paint | 8.67 MB | **134 KB** |
 | assets | inlined, re-downloaded every visit | cached, parallel, lazy-loaded |
-| image payload | 5.62 MB JPEG/PNG | **4.14 MB WebP** |
 
 Only the ~11 assets the first screen actually needs are fetched on load; the
 rest arrive when you navigate to them.
@@ -171,7 +167,6 @@ safe.
 Useful flags:
 
 ```sh
-python build.py export.html --no-webp         # keep JPEG/PNG instead of WebP
 python build.py export.html --no-recompress   # extract images byte-identical
 python build.py export.html --quality 90      # higher JPEG quality
 ```
