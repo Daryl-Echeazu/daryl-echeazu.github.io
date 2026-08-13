@@ -192,9 +192,20 @@ fast enough: rAF is starved while the app compiles, and the cover was measured
 disappearing 71ms into a fast load — exactly the window it exists to hide. A
 `MutationObserver` on `document` re-attaches it as a microtask instead.
 
+The mark is a simplified El Capitan — the same prow that carries The Valley —
+drawn in the site's gold, not the ⛰️ emoji, which would read as clip art next to
+this typography. Short straight segments at the summit keep it crisp; smooth
+curves all the way over read as a bell curve rather than granite. The floor,
+ridge and wall are staggered so it builds rather than appearing at once, and the
+name rises under it.
+
 Verified across throttled, cold and warm loads: **0 frames** with the raw
 template exposed. A 9s hard timeout tears it down regardless, so it can never
 trap anyone.
+
+`MIN_SHOW` (900ms) is the one cost worth knowing: it holds the cover long enough
+for the mark to finish drawing, so a warm load that could reveal at ~460ms now
+takes ~1050ms. Lower it for speed, raise it for ceremony.
 
 ### Experience
 

@@ -25,9 +25,9 @@
 
   var BG = "oklch(0.13 0.005 260)";
   var INK = "oklch(0.94 0.005 260)";
-  var MUTED = "oklch(0.55 0.005 260)";
+  var GOLD = "oklch(0.86 0.13 85)";   // the site's accent, as on the headline word
   var TIMEOUT = 9000;      // absolute ceiling, whatever happens
-  var MIN_SHOW = 380;      // avoid a one-frame blink on a warm cache
+  var MIN_SHOW = 900;      // let the mark finish drawing; see README on the cost
 
   var start = Date.now();
   var el = null, styleEl = null, done = false;
@@ -37,27 +37,55 @@
     el.id = "boot";
     el.setAttribute("role", "status");
     el.setAttribute("aria-label", "Loading");
+    // The mark is a simplified El Capitan — the same prow that carries The
+    // Valley — rather than the ⛰️ emoji, which would read as clip art next to
+    // this typography. pathLength="100" normalises the stroke so the draw-on
+    // maths is exact without measuring the geometry.
+    // Asymmetry is what makes it read as El Capitan rather than a bell curve:
+    // a steep west face, a summit set left of centre, and a long shoulder
+    // falling away east. A fainter ridge behind gives it a valley to stand in.
     el.innerHTML =
-      '<div class="boot-mark">DARYL ECHEAZU</div>' +
-      '<div class="boot-bar"><i></i></div>';
+      '<svg class="boot-peak" viewBox="0 0 120 72" aria-hidden="true">' +
+      '<path class="ridge" pathLength="100" d="M0,66 C14,64 24,57 36,50' +
+      ' C46,44 55,46 64,52 C78,60 94,65 120,66"/>' +
+      // Short straight segments at the summit keep it crisp; smooth curves all
+      // the way over read as a bell curve rather than granite.
+      '<path class="peak" pathLength="100" d="M3,65 C11,64 15,57 19,45' +
+      ' C23,32 29,17 39,10 L47,6 L52,9 C58,14 62,24 66,34' +
+      ' C71,46 78,55 89,60 C99,64 108,65 117,65"/>' +
+      '<path class="base" pathLength="100" d="M0,66.5 L120,66.5"/>' +
+      '</svg>' +
+      '<div class="boot-mark">DARYL ECHEAZU</div>';
 
     styleEl = document.createElement("style");
     styleEl.textContent = [
       "#boot{position:fixed;inset:0;z-index:2147483647;background:" + BG + ";",
       "display:flex;flex-direction:column;align-items:center;justify-content:center;",
-      "gap:18px;transition:opacity .45s cubic-bezier(.4,0,.2,1)}",
-      "#boot[data-off]{opacity:0;pointer-events:none}",
+      "gap:20px;transition:opacity .5s cubic-bezier(.4,0,.2,1),",
+      "transform .5s cubic-bezier(.4,0,.2,1)}",
+      // Lifting slightly as it goes makes the reveal feel like the cover
+      // clearing rather than the page blinking.
+      "#boot[data-off]{opacity:0;transform:translateY(-10px);pointer-events:none}",
+      "#boot .boot-peak{width:150px;height:auto;overflow:visible}",
+      "#boot .boot-peak path{fill:none;stroke-linecap:round;stroke-linejoin:round;",
+      "stroke-dasharray:100;stroke-dashoffset:100}",
+      // Staggered so the valley floor arrives first, then the ridge, then the
+      // wall — it builds rather than appearing all at once.
+      "#boot .boot-peak .base{stroke:oklch(0.30 0.005 260);stroke-width:1;",
+      "animation:bootDraw .5s ease-out forwards}",
+      "#boot .boot-peak .ridge{stroke:oklch(0.42 0.02 250);stroke-width:1.6;",
+      "animation:bootDraw .85s cubic-bezier(.35,0,.2,1) .12s forwards}",
+      "#boot .boot-peak .peak{stroke:" + GOLD + ";stroke-width:2.4;",
+      "filter:drop-shadow(0 0 10px oklch(0.86 0.13 85 / .38));",
+      "animation:bootDraw 1.15s cubic-bezier(.35,0,.2,1) .22s forwards}",
+      "@keyframes bootDraw{to{stroke-dashoffset:0}}",
       // Geist has not loaded this early — it arrives with the bundle — so this
       // deliberately names a system mono fallback that degrades gracefully.
       "#boot .boot-mark{font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;",
-      "font-size:12px;letter-spacing:.32em;color:" + INK + ";opacity:.92;",
-      "animation:bootPulse 1.8s ease-in-out infinite}",
-      "#boot .boot-bar{width:132px;height:1px;background:oklch(0.28 0.005 260);",
-      "overflow:hidden;position:relative}",
-      "#boot .boot-bar i{position:absolute;inset:0;display:block;background:" + MUTED + ";",
-      "transform:translateX(-100%);animation:bootSlide 1.25s cubic-bezier(.4,0,.2,1) infinite}",
-      "@keyframes bootPulse{0%,100%{opacity:.92}50%{opacity:.45}}",
-      "@keyframes bootSlide{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}",
+      "font-size:11px;letter-spacing:.34em;color:" + INK + ";",
+      "opacity:0;transform:translateY(4px);",
+      "animation:bootName .7s cubic-bezier(.2,.8,.25,1) .42s forwards}",
+      "@keyframes bootName{to{opacity:.9;transform:none}}",
       // The bundler's own status text sits bottom-right; the cover is above it,
       // but hide it so it cannot flash during the fade.
       "#__bundler_loading{display:none !important}"
