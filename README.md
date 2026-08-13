@@ -204,6 +204,12 @@ A place can also carry `water: "river" | "lake" | "fall" | "mist"`, which lights
 the matching feature in the drawing while it is selected — so the map confirms
 the pick, not just the photograph. Cool blue against the pin's gold.
 
+Every response to a selection runs on one clock (`DUR`/`EASE` at the top of the
+file): the dot, its label and the water all settle together. Split timings made
+the dot and the water read as two separate events. The glow is a blurred twin
+element that fades in, rather than a transitioned `drop-shadow`, which
+re-rasterises each frame and stutters.
+
 ## Known issues (pre-existing, fix in Claude Design)
 
 **The contact form discards every message.** `formEndpoint` is an unset prop, so

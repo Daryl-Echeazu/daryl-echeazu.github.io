@@ -29,24 +29,29 @@
   // Each pin sits ON the silhouette drawn in terrain(), so these coordinates and
   // that path have to be edited together.
   var PLACES = [
-    { id: "res6", name: "Tunnel View",   x: 74,  y: 298, lab: "below", note: "The first look — the whole valley in one frame." },
-    { id: "res0", name: "El Capitan",    x: 218, y: 122, lab: "above", note: "The west gate. Granite, straight up." },
+    { id: "res6", name: "Tunnel View",   x: 74,  y: 302, lab: "below", note: "The first look — the whole valley in one frame." },
+    { id: "res0", name: "El Capitan",    x: 218, y: 124, lab: "above", note: "The west gate. Granite, straight up." },
     // `water` lights the matching feature in the drawing while the place is
     // selected, so the map answers back rather than only the photograph.
-    { id: "res3", name: "Merced River",  x: 400, y: 332, lab: "below", water: "river", note: "Runs the length of the valley floor." },
-    { id: "res8", name: "Glacier Point", x: 612, y: 210, lab: "above", note: "The south rim, looking straight across at Half Dome." },
-    { id: "res1", name: "Mirror Lake",   x: 690, y: 306, lab: "below", water: "lake", note: "East end, under Half Dome." },
-    { id: "res5", name: "Mist Trail",    x: 772, y: 262, lab: "below", water: "mist", note: "The spray, and what it does to the light." },
+    { id: "res3", name: "Merced River",  x: 400, y: 343, lab: "below", water: "river", note: "Runs the length of the valley floor." },
+    { id: "res8", name: "Glacier Point", x: 614, y: 214, lab: "above", note: "The south rim, looking straight across at Half Dome." },
+    { id: "res1", name: "Mirror Lake",   x: 690, y: 331, lab: "below", water: "lake", note: "East end, under Half Dome." },
+    { id: "res5", name: "Mist Trail",    x: 772, y: 318, lab: "above", water: "mist", note: "The spray, and what it does to the light." },
     // Labelled above: below, the text ran straight through the falls drawn at
     // this same x.
     { id: "res2", name: "Vernal Fall",   x: 858, y: 250, lab: "above", water: "fall", note: "Top of the Mist Trail's first pitch." },
-    { id: "res4", name: "Liberty Cap",   x: 910, y: 192, lab: "above", note: "The dome standing over Nevada Fall." }
+    { id: "res4", name: "Liberty Cap",   x: 910, y: 195, lab: "above", note: "The dome standing over Nevada Fall." }
   ];
 
   var BG = "oklch(0.13 0.005 260)";
   var INK = "oklch(0.94 0.005 260)";
   var MUTED = "oklch(0.58 0.005 260)";
   var GOLD = "oklch(0.86 0.13 85)";
+
+  // One clock for every response to a selection — pin, label and water. Split
+  // timings are what made the dot and the water read as two separate events.
+  var DUR = ".42s";
+  var EASE = "cubic-bezier(.2,.8,.25,1)";
 
   var root = null;      // overlay element, built once
   var current = -1;
@@ -78,12 +83,15 @@
       "#valley svg{width:100%;height:auto;max-height:38vh;display:block;margin-top:18px;touch-action:manipulation}",
       "#valley .pin{cursor:pointer}",
       "#valley .pin circle.hit{fill:transparent}",
-      // Overshooting easing so the dot springs rather than eases — at 0.18s
-      // linear it barely registered as a transition at all.
+      // The radius keeps a slight overshoot so the dot springs, but every
+      // duration here is DUR so the dot, its label and the water all settle
+      // together.
       "#valley .pin circle.dot{fill:" + MUTED + ";",
-      "transition:r .34s cubic-bezier(.2,1.5,.4,1),fill .28s ease,filter .28s ease}",
+      "transition:r " + DUR + " cubic-bezier(.2,1.45,.4,1),fill " + DUR + " " + EASE + ",",
+      "filter " + DUR + " " + EASE + "}",
       "#valley .pin text{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.1em;",
-      "fill:" + MUTED + ";transition:fill .28s ease,letter-spacing .34s ease}",
+      "fill:" + MUTED + ";transition:fill " + DUR + " " + EASE + ",",
+      "letter-spacing " + DUR + " " + EASE + "}",
       "#valley .pin:hover circle.dot{fill:" + GOLD + ";r:6.5}",
       "#valley .pin[data-on] circle.dot{fill:" + GOLD + ";r:7;",
       "filter:drop-shadow(0 0 7px oklch(0.86 0.13 85 / .65))}",
@@ -96,20 +104,22 @@
       "@keyframes vping{0%{r:7;opacity:.55}70%{opacity:0}100%{r:22;opacity:0}}",
       "#valley .pin:focus{outline:none}",
       "#valley .pin:focus-visible circle.dot{fill:" + GOLD + ";r:7.5}",
-      // Water answers back: selecting a river, lake or falls lights that feature
-      // in the drawing, so the map confirms what you picked rather than leaving
-      // all the feedback to the photograph. Cool blue against the pin's gold.
+      // Water answers back on the SAME clock as the dot — DUR/EASE below are
+      // shared with the pin, because at different timings the two read as
+      // separate events rather than one response. The blurred twins fade in;
+      // the base shapes only shift colour.
+      "#valley .wg{opacity:0;transition:opacity " + DUR + " " + EASE + "}",
       "#valley .w-river,#valley .w-lake,#valley .w-fall,#valley .w-mist{",
-      "transition:filter .45s ease,opacity .45s ease,stroke .45s ease}",
-      "#valley[data-water='river'] .w-river{stroke:oklch(0.88 0.10 235);opacity:1;",
-      "filter:drop-shadow(0 0 7px oklch(0.80 0.14 235 / .85))}",
-      "#valley[data-water='lake'] .w-lake{opacity:.95;",
-      "filter:drop-shadow(0 0 9px oklch(0.80 0.14 235 / .8))}",
-      "#valley[data-water='fall'] .w-fall{opacity:1;",
-      "filter:drop-shadow(0 0 8px oklch(0.86 0.12 235 / .9))}",
+      "transition:opacity " + DUR + " " + EASE + ",stroke " + DUR + " " + EASE + "}",
+      "#valley[data-water='river'] .wg-river{opacity:.75}",
+      "#valley[data-water='river'] .w-river{stroke:oklch(0.88 0.10 235);opacity:1}",
+      "#valley[data-water='lake'] .wg-lake{opacity:.7}",
+      "#valley[data-water='lake'] .w-lake{opacity:.95}",
+      "#valley[data-water='fall'] .wg-fall{opacity:.85}",
+      "#valley[data-water='fall'] .w-fall{opacity:1}",
       "#valley[data-water='fall'] .w-mist{opacity:.4}",
-      "#valley[data-water='mist'] .w-mist{opacity:.55;",
-      "filter:drop-shadow(0 0 10px oklch(0.86 0.10 235 / .8))}",
+      "#valley[data-water='mist'] .wg-mist{opacity:.5}",
+      "#valley[data-water='mist'] .w-mist{opacity:.55}",
       "#valley[data-water='mist'] .w-fall{opacity:.9}",
       "#valley .vcard{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px;",
       "align-items:center;margin-top:26px;min-height:230px}",
@@ -172,42 +182,53 @@
       '<linearGradient id="vfall" x1="0" y1="0" x2="0" y2="1">',
       '<stop offset="0" stop-color="oklch(0.86 0.03 235)" stop-opacity=".85"/>',
       '<stop offset="1" stop-color="oklch(0.70 0.03 235)" stop-opacity=".15"/></linearGradient>',
+      // Each water feature has a blurred twin that fades in on selection.
+      // Animating opacity is far smoother than animating a drop-shadow, which
+      // re-rasterises the filter on every frame.
+      '<filter id="vglow" x="-70%" y="-70%" width="240%" height="240%">',
+      '<feGaussianBlur stdDeviation="4.5"/></filter>',
       '</defs>',
       '<rect x="0" y="96" width="1000" height="292" fill="url(#vsky)"/>',
       // far ridge
       '<path d="M0,258 C120,238 210,224 300,242 C420,266 520,226 640,220',
       ' C764,214 862,190 1000,208 L1000,388 L0,388 Z" fill="url(#vfar)"/>',
-      // the valley itself — the silhouette the pins are placed against
-      '<path d="M0,306 L118,302 L146,158 C150,134 166,124 196,124 L246,124',
-      ' C274,124 286,140 292,168 L330,258 C372,300 434,308 500,306 L558,302',
+      // The valley silhouette the pins are placed against. El Capitan is a prow,
+      // not a mesa: a long sweeping rise out of the floor to a rounded summit
+      // set west of centre, then a gentler shoulder falling away east. The
+      // curve passes exactly through each summit pin's coordinates.
+      '<path id="v-near" d="M0,306 L112,304 C126,300 134,268 140,236',
+      ' C147,196 158,152 176,134 C190,120 206,116 218,124',
+      ' C232,133 242,152 250,176 C262,214 274,254 296,278',
+      ' C330,302 420,310 500,306 L558,302',
       ' C584,266 598,232 614,214 C632,234 650,270 670,296 L700,308',
       ' C722,302 738,284 752,246 C762,182 786,152 814,152 C842,152 856,180 858,222',
       ' L874,264 C886,238 898,208 910,196 C926,208 942,242 962,270 L1000,288',
       ' L1000,388 L0,388 Z" fill="url(#vnear)"/>'
     ];
-    // El Capitan's face is read by its vertical striations more than its outline.
-    for (var i = 0; i < 7; i++) {
-      var x = 158 + i * 19;
-      out.push('<path d="M' + x + ',' + (132 + i % 3 * 5) + ' L' + (x + 5) + ',292"',
-               ' stroke="oklch(0.34 0.008 260)" stroke-width="1.2" fill="none"',
-               ' opacity="' + (0.30 + (i % 3) * 0.12).toFixed(2) + '"/>');
-    }
     out.push(
       // Vernal Fall, dropping from the lip the pin sits on, with spray at its foot
       '<path class="w-fall" d="M856,252 L862,252 L865,302 L853,302 Z" fill="url(#vfall)"/>',
+      '<path class="wg wg-fall" d="M856,252 L862,252 L865,302 L853,302 Z"',
+      ' fill="oklch(0.92 0.06 235)" filter="url(#vglow)"/>',
       '<ellipse class="w-mist" cx="859" cy="303" rx="17" ry="5" fill="oklch(0.78 0.02 235)" opacity=".16"/>',
       '<ellipse class="w-mist" cx="859" cy="300" rx="10" ry="3.4" fill="oklch(0.86 0.02 235)" opacity=".14"/>',
+      '<ellipse class="wg wg-mist" cx="859" cy="301" rx="20" ry="7"',
+      ' fill="oklch(0.90 0.05 235)" filter="url(#vglow)"/>',
       // valley floor and the Merced running through it
-      '<path d="M0,338 L340,340 L560,338 L700,336 L790,318 L880,286 L1000,266',
-      ' L1000,388 L0,388 Z" fill="oklch(0.238 0.008 260)"/>',
+      '<path id="v-floor" d="M0,338 L340,340 L560,338 L700,336 L790,318 L880,286',
+      ' L1000,266 L1000,388 L0,388 Z" fill="oklch(0.238 0.008 260)"/>',
       // Mirror Lake — named on the map but never drawn until now, which left its
       // pin sitting on bare ground.
       '<ellipse class="w-lake" cx="690" cy="336" rx="30" ry="5"',
       ' fill="oklch(0.46 0.045 238)" opacity=".55"/>',
       '<ellipse class="w-lake" cx="690" cy="335" rx="18" ry="2.2"',
       ' fill="oklch(0.72 0.05 238)" opacity=".35"/>',
+      '<ellipse class="wg wg-lake" cx="690" cy="336" rx="32" ry="6.5"',
+      ' fill="oklch(0.86 0.08 238)" filter="url(#vglow)"/>',
       '<path class="w-river" d="M40,344 C240,350 420,342 600,340 C690,338 748,326 812,300"',
-      ' fill="none" stroke="oklch(0.52 0.045 238)" stroke-width="2.6" opacity=".75"/>'
+      ' fill="none" stroke="oklch(0.52 0.045 238)" stroke-width="2.6" opacity=".75"/>',
+      '<path class="wg wg-river" d="M40,344 C240,350 420,342 600,340 C690,338 748,326 812,300"',
+      ' fill="none" stroke="oklch(0.88 0.09 235)" stroke-width="3.4" filter="url(#vglow)"/>'
     );
     // A sparse conifer line for scale against the walls. Each tree is planted on
     // the floor path rather than a flat baseline, or the eastern ones float as
