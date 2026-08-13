@@ -229,10 +229,17 @@ the effect comes from the type moving *against* the image, which is what sells
 depth here. Real multi-plane depth would need the subject cut out from the
 background.
 
-Two things it must keep doing, both of which it got wrong first: it only grabs
-the **home** hero (the About carousel also uses `object-fit: cover`, and an
-earlier selector jiggled it), and it is fully off under `prefers-reduced-motion`
-— checked live, not once at load, since the whole effect is motion.
+It must only grab the **home** hero: the About carousel also uses
+`object-fit: cover`, and an earlier selector grabbed that too and jiggled it. It
+now requires an image that fills the viewport.
+
+It is deliberately **not** gated on `prefers-reduced-motion`, matching the rest
+of the site — gating it silently disabled the whole effect on a machine with
+that flag set, which is most Windows installs with animation effects off.
+
+Strength is one constant, `DEPTH` at the top of the file. At 1.5 the photo
+travels ~35px and the headline ~60px in the opposite direction across the
+screen. The photo's `scale` has to stay ahead of its travel or its edges show.
 
 To remove: delete the file and its line in `build.py`. Nothing else refers to it.
 

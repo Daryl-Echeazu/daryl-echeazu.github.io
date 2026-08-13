@@ -22,11 +22,14 @@
 
   // How far each layer travels, in px at full deflection. The photo moves least
   // and opposite the type — that opposition is what the eye reads as depth.
+  // Scale on the photo has to stay ahead of its travel or the edges show.
+  // Tune the whole effect with one number: DEPTH.
+  var DEPTH = 1.5;
   var LAYERS = [
-    { pick: heroImage,   x: -14, y: -9,  scale: 1.05 },
-    { pick: heroHeading, x: 24,  y: 14 },
-    { pick: heroCaption, x: 13,  y: 8 },
-    { pick: heroLinks,   x: 17,  y: 10 }
+    { pick: heroImage,   x: -14 * DEPTH, y: -9 * DEPTH, scale: 1.07 },
+    { pick: heroHeading, x: 24 * DEPTH,  y: 14 * DEPTH },
+    { pick: heroCaption, x: 13 * DEPTH,  y: 8 * DEPTH },
+    { pick: heroLinks,   x: 17 * DEPTH,  y: 10 * DEPTH }
   ];
 
   var tx = 0, ty = 0, cx = 0, cy = 0;   // target and current, normalised -1..1
@@ -96,20 +99,10 @@
     }
   }
 
-  // Off for anyone who has asked their system for less motion. The whole effect
-  // IS motion, so there is nothing to keep. Checked live rather than once at
-  // load, so toggling the OS setting takes effect without a reload — and
-  // because reading it once at startup silently missed the case entirely.
-  var reduceMQ = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
-  function motionOK() { return !(reduceMQ && reduceMQ.matches); }
-  if (reduceMQ && reduceMQ.addEventListener) {
-    reduceMQ.addEventListener("change", function () {
-      if (!motionOK()) { tx = ty = 0; cx = cy = 0; clear(); }
-    });
-  }
-
+  // Deliberately NOT gated on prefers-reduced-motion. The site's owner does not
+  // want that setting honoured here — the animation is the point — and gating on
+  // it silently disabled this on his own machine, which has the flag set.
   document.addEventListener("mousemove", function (e) {
-    if (!motionOK()) return;
     if (!onHome()) {
       if (active) { active = false; tx = ty = 0; kick(); }
       return;
@@ -132,12 +125,12 @@
   if (window.DeviceOrientationEvent &&
       typeof window.DeviceOrientationEvent.requestPermission !== "function") {
     window.addEventListener("deviceorientation", function (e) {
-      if (!motionOK() || !onHome() || e.gamma === null) return;
+      if (!onHome() || e.gamma === null) return;
       tx = Math.max(-1, Math.min(1, e.gamma / 28));   // left/right tilt
       ty = Math.max(-1, Math.min(1, (e.beta - 45) / 32));
       kick();
     }, { passive: true });
   }
 
-  window.__heroParallax = { clear: clear, motionOK: motionOK };
+  window.__heroParallax = { clear: clear };
 })();
