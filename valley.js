@@ -31,13 +31,15 @@
   var PLACES = [
     { id: "res6", name: "Tunnel View",   x: 74,  y: 298, lab: "below", note: "The first look — the whole valley in one frame." },
     { id: "res0", name: "El Capitan",    x: 218, y: 122, lab: "above", note: "The west gate. Granite, straight up." },
-    { id: "res3", name: "Merced River",  x: 400, y: 332, lab: "below", note: "Runs the length of the valley floor." },
+    // `water` lights the matching feature in the drawing while the place is
+    // selected, so the map answers back rather than only the photograph.
+    { id: "res3", name: "Merced River",  x: 400, y: 332, lab: "below", water: "river", note: "Runs the length of the valley floor." },
     { id: "res8", name: "Glacier Point", x: 612, y: 210, lab: "above", note: "The south rim, looking straight across at Half Dome." },
-    { id: "res1", name: "Mirror Lake",   x: 690, y: 306, lab: "below", note: "East end, under Half Dome." },
-    { id: "res5", name: "Mist Trail",    x: 772, y: 262, lab: "below", note: "The spray, and what it does to the light." },
+    { id: "res1", name: "Mirror Lake",   x: 690, y: 306, lab: "below", water: "lake", note: "East end, under Half Dome." },
+    { id: "res5", name: "Mist Trail",    x: 772, y: 262, lab: "below", water: "mist", note: "The spray, and what it does to the light." },
     // Labelled above: below, the text ran straight through the falls drawn at
     // this same x.
-    { id: "res2", name: "Vernal Fall",   x: 858, y: 250, lab: "above", note: "Top of the Mist Trail's first pitch." },
+    { id: "res2", name: "Vernal Fall",   x: 858, y: 250, lab: "above", water: "fall", note: "Top of the Mist Trail's first pitch." },
     { id: "res4", name: "Liberty Cap",   x: 910, y: 192, lab: "above", note: "The dome standing over Nevada Fall." }
   ];
 
@@ -94,6 +96,21 @@
       "@keyframes vping{0%{r:7;opacity:.55}70%{opacity:0}100%{r:22;opacity:0}}",
       "#valley .pin:focus{outline:none}",
       "#valley .pin:focus-visible circle.dot{fill:" + GOLD + ";r:7.5}",
+      // Water answers back: selecting a river, lake or falls lights that feature
+      // in the drawing, so the map confirms what you picked rather than leaving
+      // all the feedback to the photograph. Cool blue against the pin's gold.
+      "#valley .w-river,#valley .w-lake,#valley .w-fall,#valley .w-mist{",
+      "transition:filter .45s ease,opacity .45s ease,stroke .45s ease}",
+      "#valley[data-water='river'] .w-river{stroke:oklch(0.88 0.10 235);opacity:1;",
+      "filter:drop-shadow(0 0 7px oklch(0.80 0.14 235 / .85))}",
+      "#valley[data-water='lake'] .w-lake{opacity:.95;",
+      "filter:drop-shadow(0 0 9px oklch(0.80 0.14 235 / .8))}",
+      "#valley[data-water='fall'] .w-fall{opacity:1;",
+      "filter:drop-shadow(0 0 8px oklch(0.86 0.12 235 / .9))}",
+      "#valley[data-water='fall'] .w-mist{opacity:.4}",
+      "#valley[data-water='mist'] .w-mist{opacity:.55;",
+      "filter:drop-shadow(0 0 10px oklch(0.86 0.10 235 / .8))}",
+      "#valley[data-water='mist'] .w-fall{opacity:.9}",
       "#valley .vcard{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px;",
       "align-items:center;margin-top:26px;min-height:230px}",
       "#valley .vphoto{width:100%;aspect-ratio:3/2;object-fit:cover;background:oklch(0.18 0.005 260);",
@@ -177,13 +194,19 @@
     }
     out.push(
       // Vernal Fall, dropping from the lip the pin sits on, with spray at its foot
-      '<path d="M856,252 L862,252 L865,302 L853,302 Z" fill="url(#vfall)"/>',
-      '<ellipse cx="859" cy="303" rx="17" ry="5" fill="oklch(0.78 0.02 235)" opacity=".16"/>',
-      '<ellipse cx="859" cy="300" rx="10" ry="3.4" fill="oklch(0.86 0.02 235)" opacity=".14"/>',
+      '<path class="w-fall" d="M856,252 L862,252 L865,302 L853,302 Z" fill="url(#vfall)"/>',
+      '<ellipse class="w-mist" cx="859" cy="303" rx="17" ry="5" fill="oklch(0.78 0.02 235)" opacity=".16"/>',
+      '<ellipse class="w-mist" cx="859" cy="300" rx="10" ry="3.4" fill="oklch(0.86 0.02 235)" opacity=".14"/>',
       // valley floor and the Merced running through it
       '<path d="M0,338 L340,340 L560,338 L700,336 L790,318 L880,286 L1000,266',
       ' L1000,388 L0,388 Z" fill="oklch(0.238 0.008 260)"/>',
-      '<path d="M40,344 C240,350 420,342 600,340 C690,338 748,326 812,300"',
+      // Mirror Lake — named on the map but never drawn until now, which left its
+      // pin sitting on bare ground.
+      '<ellipse class="w-lake" cx="690" cy="336" rx="30" ry="5"',
+      ' fill="oklch(0.46 0.045 238)" opacity=".55"/>',
+      '<ellipse class="w-lake" cx="690" cy="335" rx="18" ry="2.2"',
+      ' fill="oklch(0.72 0.05 238)" opacity=".35"/>',
+      '<path class="w-river" d="M40,344 C240,350 420,342 600,340 C690,338 748,326 812,300"',
       ' fill="none" stroke="oklch(0.52 0.045 238)" stroke-width="2.6" opacity=".75"/>'
     );
     // A sparse conifer line for scale against the walls. Each tree is planted on
@@ -272,6 +295,8 @@
     img.alt = p.name + ", Yosemite";
     root.querySelector(".vname").textContent = p.name;
     root.querySelector(".vnote").textContent = p.note;
+    if (p.water) root.setAttribute("data-water", p.water);
+    else root.removeAttribute("data-water");
     Array.prototype.forEach.call(root.querySelectorAll(".pin"), function (g) {
       if (+g.getAttribute("data-i") === i) g.setAttribute("data-on", "");
       else g.removeAttribute("data-on");

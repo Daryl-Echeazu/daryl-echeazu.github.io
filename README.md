@@ -200,6 +200,10 @@ To add or move a place, edit `PLACES` — but the pins sit *on* the silhouette i
 Label side is per-place (`lab: "above" | "below"`): Vernal Fall is labelled above
 because below, the text runs straight through the falls drawn at the same x.
 
+A place can also carry `water: "river" | "lake" | "fall" | "mist"`, which lights
+the matching feature in the drawing while it is selected — so the map confirms
+the pick, not just the photograph. Cool blue against the pin's gold.
+
 ## Known issues (pre-existing, fix in Claude Design)
 
 **The contact form discards every message.** `formEndpoint` is an unset prop, so
