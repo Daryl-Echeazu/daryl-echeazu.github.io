@@ -76,6 +76,10 @@
       "line-height:1;margin:0}",
       "#valley .vsub{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.18em;",
       "color:" + MUTED + "}",
+      "#valley .vwx{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.14em;",
+      "color:oklch(0.72 0.06 235);margin-top:7px;min-height:13px;opacity:0;",
+      "transition:opacity .5s ease}",
+      "#valley .vwx[data-on]{opacity:1}",
       "#valley .vclose{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;",
       "color:" + MUTED + ";background:none;border:1px solid oklch(0.30 0.005 260);border-radius:999px;",
       "padding:7px 14px;cursor:pointer}",
@@ -275,6 +279,7 @@
       '<div class="vhead"><div>',
       '<h2 class="vtitle">The Valley</h2>',
       '<div class="vsub">YOSEMITE &middot; WEST TO EAST</div>',
+      '<div class="vwx" aria-live="polite"></div>',
       '</div><button class="vclose" type="button">CLOSE &nbsp;ESC</button></div>',
       // Cropped to the terrain: the top 96 units are empty sky, and leaving them
       // in pushes the photograph below the fold on a laptop.
@@ -330,8 +335,57 @@
     if (g) g.focus();
   }
 
+  // Current conditions in the valley, from the National Weather Service. Free,
+  // keyless, and it sends Access-Control-Allow-Origin: *, so no backend.
+  //
+  // Two sources on purpose: the nearest station (YYVC1, in the valley itself)
+  // reports a real temperature right now but often has no text description,
+  // while the gridpoint forecast always has words for the sky. Temperature from
+  // the observation, sky from the forecast.
+  //
+  // Fails silently. A map that quietly stays a map is fine; an error message
+  // about a weather API on someone's portfolio is not.
+  var WX_OBS = "https://api.weather.gov/stations/YYVC1/observations/latest";
+  var WX_FC = "https://api.weather.gov/gridpoints/HNX/67,143/forecast";
+  var wxDone = false;
+
+  function loadWeather() {
+    if (wxDone || !root) return;
+    wxDone = true;                                  // once per page load
+    var el = root.querySelector(".vwx");
+    var temp = null, sky = null;
+
+    function paint() {
+      if (temp === null && !sky) return;
+      var bits = ["YOSEMITE VALLEY"];
+      if (temp !== null) bits.push(temp + "°F");
+      if (sky) bits.push(sky.toUpperCase());
+      el.textContent = bits.join("  ·  ");
+      el.setAttribute("data-on", "");
+    }
+
+    fetch(WX_OBS).then(function (r) { return r.json(); }).then(function (d) {
+      var c = d && d.properties && d.properties.temperature &&
+              d.properties.temperature.value;
+      if (typeof c === "number") { temp = Math.round(c * 9 / 5 + 32); paint(); }
+      var t = d && d.properties && d.properties.textDescription;
+      if (t && !sky) { sky = t; paint(); }
+    }).catch(function () {});
+
+    fetch(WX_FC).then(function (r) { return r.json(); }).then(function (d) {
+      var p = d && d.properties && d.properties.periods && d.properties.periods[0];
+      // shortForecast can run to a sentence ("Chance Light Rain then Chance
+      // Showers And Thunderstorms"); the first clause is the useful part.
+      if (p && p.shortForecast && !sky) {
+        sky = p.shortForecast.split(/\s+then\s+/i)[0];
+        paint();
+      }
+    }).catch(function () {});
+  }
+
   function open() {
     if (!root) root = build();
+    loadWeather();          // deferred to first open, not page load
     root.setAttribute("data-open", "");
     document.body.style.overflow = "hidden";
     current = -1;

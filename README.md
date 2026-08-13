@@ -210,6 +210,32 @@ the dot and the water read as two separate events. The glow is a blurred twin
 element that fades in, rather than a transitioned `drop-shadow`, which
 re-rasterises each frame and stutters.
 
+### Live conditions
+
+The Valley shows current weather in the valley, from the National Weather
+Service: free, keyless, and `Access-Control-Allow-Origin: *`, so no backend.
+Temperature comes from station **YYVC1** (in the valley itself), which reports a
+real reading now but often has no text description; the sky comes from the
+gridpoint forecast, which always has words. It is fetched on first open rather
+than page load, and fails silently — a map that stays a map is fine, an error
+about a weather API on a portfolio is not.
+
+### Hero parallax (prototype)
+
+`hero-parallax.js` moves the hero photograph and the type over it by different
+amounts as the pointer moves, so the first screen reads as a space rather than a
+flat image. It is one photograph, so there are no true depth planes to separate;
+the effect comes from the type moving *against* the image, which is what sells
+depth here. Real multi-plane depth would need the subject cut out from the
+background.
+
+Two things it must keep doing, both of which it got wrong first: it only grabs
+the **home** hero (the About carousel also uses `object-fit: cover`, and an
+earlier selector jiggled it), and it is fully off under `prefers-reduced-motion`
+— checked live, not once at load, since the whole effect is motion.
+
+To remove: delete the file and its line in `build.py`. Nothing else refers to it.
+
 ## Known issues (pre-existing, fix in Claude Design)
 
 **The contact form discards every message.** `formEndpoint` is an unset prop, so

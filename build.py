@@ -141,6 +141,10 @@ SPINE_TO = (
 # duplicated into the template instead.
 VALLEY_SCRIPT = '  <script src="valley.js"></script>'
 
+# PROTOTYPE. Parallax between the hero photograph and the type over it.
+# Delete this line and hero-parallax.js to remove it; nothing else refers to it.
+PARALLAX_SCRIPT = '  <script src="hero-parallax.js"></script>'
+
 # The doorway is the existing photo caption, styled to look like one. A stylesheet
 # rule rather than injected markup, because anything injected into the app's
 # subtree is wiped on its next re-render.
@@ -554,8 +558,12 @@ def main():
         if not m:
             print("the valley   : SKIPPED — no <title> to anchor to")
         else:
-            html = html[:m.end()] + "\n" + VALLEY_SCRIPT + html[m.end():]
-            print("the valley   : script wired")
+            extra = VALLEY_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "hero-parallax.js")):
+                extra += "\n" + PARALLAX_SCRIPT
+            html = html[:m.end()] + "\n" + extra + html[m.end():]
+            print("the valley   : script wired%s"
+                  % (" (+ hero parallax)" if PARALLAX_SCRIPT in extra else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
