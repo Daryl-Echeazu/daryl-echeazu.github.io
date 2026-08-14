@@ -131,23 +131,12 @@
   #desk .ring.r1{right:74px;top:52px;width:104px;height:100px;transform:rotate(-8deg)}
   #desk .ring.r2{right:96px;top:74px;width:64px;height:62px;border-width:4px;
     border-color:oklch(0.44 0.075 58 / .20);filter:blur(1.6px)}
-  #desk .pencil{position:absolute;right:-30px;bottom:186px;width:250px;height:12px;
-    transform:rotate(-13deg);filter:drop-shadow(0 12px 16px oklch(0 0 0 / .55))}
-  #desk .pencil i{position:absolute;display:block}
-  #desk .pencil .body{left:34px;right:0;top:0;height:12px;border-radius:2px;
-    background:linear-gradient(180deg, oklch(0.80 0.13 88), oklch(0.66 0.12 84) 46%,
-      oklch(0.47 0.08 78))}
-  #desk .pencil .tip{left:10px;top:0;width:26px;height:12px;
-    background:linear-gradient(180deg, oklch(0.86 0.03 82), oklch(0.62 0.03 76));
-    clip-path:polygon(100% 0,100% 100%,0 62%,0 38%)}
-  #desk .pencil .lead{left:0;top:4px;width:12px;height:5px;background:oklch(0.28 0.01 60);
-    clip-path:polygon(100% 0,100% 100%,0 68%,0 32%)}
   #desk .clip{position:absolute;left:38px;top:78px;width:26px;height:62px;border-radius:13px;
     border:3px solid oklch(0.72 0.02 250 / .75);border-bottom-color:transparent;
     transform:rotate(9deg);z-index:3;filter:drop-shadow(0 3px 4px oklch(0 0 0 / .5))}
   #desk .clip::after{content:"";position:absolute;left:6px;top:9px;width:14px;height:42px;
     border-radius:8px;border:3px solid oklch(0.72 0.02 250 / .6);border-bottom-color:transparent}
-  #desk .sheet{position:relative;width:min(470px,72%);margin-left:132px;
+  #desk .sheet{position:relative;width:min(430px,64%);margin-left:126px;
     color:oklch(0.24 0.024 58);padding:28px 30px 22px;border-radius:1px;
     transform:rotate(-1.8deg);
     /* two shadows: a tight contact one and a wide soft one, which is what sells
@@ -185,31 +174,9 @@
     background:oklch(0.62 0.15 25 / .35)}
 
   /* ── desk objects ─────────────────────────────────────────── */
-  #desk .manga{position:absolute;left:28px;top:34px;width:118px;height:166px;z-index:2;
-    transform:rotate(-7deg);filter:drop-shadow(0 14px 20px oklch(0 0 0 / .6))}
-  #desk .manga .pages{position:absolute;inset:0 0 0 13px;border-radius:1px;
-    background:linear-gradient(90deg, oklch(0.88 0.02 90), oklch(0.78 0.02 88));
-    box-shadow:inset -2px 0 0 oklch(0.62 0.03 85)}
-  #desk .manga .spine{position:absolute;left:0;top:0;bottom:0;width:22px;border-radius:1px 0 0 1px;
-    background:linear-gradient(180deg, oklch(0.46 0.16 24), oklch(0.33 0.13 22));
-    color:oklch(0.94 0.02 90);writing-mode:vertical-rl;font-family:'Geist Mono',monospace;
-    font-size:8.5px;letter-spacing:.14em;display:flex;align-items:center;justify-content:center;
-    white-space:nowrap;overflow:hidden}
-  #desk .manga .mark{position:absolute;right:8px;bottom:8px;font-family:'Geist Mono',monospace;
-    font-size:7.5px;letter-spacing:.1em;color:oklch(0.42 0.03 70);background:oklch(0.95 0.01 90);
-    padding:2px 4px;border:1px solid oklch(0.70 0.02 85)}
-  #desk .mug{position:absolute;right:96px;top:36px;width:76px;height:76px;
-    filter:drop-shadow(0 14px 18px oklch(0 0 0 / .55))}
-  #desk .mug .body{position:absolute;inset:0;border-radius:50%;
-    background:radial-gradient(circle at 34% 30%, oklch(0.42 0.02 250), oklch(0.26 0.01 250));
-    box-shadow:inset 0 0 0 4px oklch(0.50 0.02 250)}
-  #desk .mug .brew{position:absolute;inset:13px;border-radius:50%;
-    background:radial-gradient(circle at 38% 32%, oklch(0.33 0.06 55), oklch(0.19 0.04 48))}
-  #desk .mug .handle{position:absolute;right:-17px;top:24px;width:26px;height:28px;
-    border:5px solid oklch(0.44 0.02 250);border-left-color:transparent;border-radius:0 50% 50% 0}
-  #desk .sticky{position:absolute;right:46px;bottom:44px;width:112px;height:118px;
+  #desk .sticky{position:absolute;left:34px;bottom:34px;width:112px;height:118px;
     background:linear-gradient(170deg, oklch(0.92 0.13 105), oklch(0.86 0.14 100));
-    transform:rotate(6deg);padding:12px 10px;box-sizing:border-box;text-align:center;
+    transform:rotate(-5deg);padding:12px 10px;box-sizing:border-box;text-align:center;
     box-shadow:0 2px 2px oklch(0 0 0 / .35), 0 16px 26px oklch(0 0 0 / .45);
     color:oklch(0.30 0.06 80)}
   #desk .sticky b{display:block;font-family:'Geist Mono',monospace;font-size:8.5px;
@@ -218,6 +185,18 @@
     font-size:38px;line-height:1.25}
   #desk .sticky span{display:block;font-family:'Instrument Serif',serif;font-style:italic;
     font-size:11.5px;opacity:.8;line-height:1.3}
+
+  /* Objects share one light: highlights up-left, shadows down-right. */
+  #desk .obj{position:absolute;pointer-events:none}
+  #desk .obj svg{width:100%;height:auto;display:block}
+  #desk .cube{left:26px;top:34px;width:96px;transform:rotate(-4deg);
+    filter:drop-shadow(7px 13px 12px rgba(0,0,0,.62))}
+  #desk .can{right:66px;top:20px;width:60px;transform:rotate(3deg);
+    filter:drop-shadow(9px 15px 14px rgba(0,0,0,.6))}
+  #desk .kb{right:12px;bottom:12px;width:286px;transform:rotate(-5deg);
+    filter:drop-shadow(8px 14px 16px rgba(0,0,0,.6))}
+  #desk .mouse{right:6px;bottom:150px;width:50px;transform:rotate(-12deg);
+    filter:drop-shadow(7px 12px 12px rgba(0,0,0,.6))}
 
   /* the dart the note becomes */
   #desk .dart{position:absolute;width:120px;pointer-events:none;opacity:0;z-index:8}
@@ -349,17 +328,16 @@
   <div class="surface">
     <div class="ring r1"></div><div class="ring r2"></div>
 
-    <!-- things that are actually his, not generic desk dressing -->
-    <div class="manga" title="from the shelf">
-      <i class="pages"></i><span class="spine">HAJIME NO IPPO</span><i class="mark">V.1</i>
-    </div>
-    <div class="mug"><i class="body"></i><i class="handle"></i><i class="brew"></i></div>
+    <!-- his actual desk, not generic dressing -->
+    <div class="obj cube"></div>
+    <div class="obj can"></div>
+    <div class="obj kb"></div>
+    <div class="obj mouse"></div>
     <div class="sticky">
       <b>ZETAMAC</b>
       <em>125</em>
       <span>next stop 130</span>
     </div>
-    <div class="pencil"><i class="body"></i><i class="tip"></i><i class="lead"></i></div>
     <div class="clip"></div>
 
     <div class="sheet">
@@ -467,8 +445,14 @@
 })();
 </script>
 <script type="module">
-  import { applyMaterials } from "./desk-scene.js";
-  applyMaterials(document.getElementById("desk"));
+  import { applyMaterials, keyboardSVG, mouseSVG, canSVG, cubeSVG }
+    from "./desk-scene.js";
+  const desk = document.getElementById("desk");
+  applyMaterials(desk);
+  desk.querySelector(".cube").innerHTML = cubeSVG();
+  desk.querySelector(".can").innerHTML = canSVG();
+  desk.querySelector(".kb").innerHTML = keyboardSVG();
+  desk.querySelector(".mouse").innerHTML = mouseSVG();
 </script>
 <script type="module" src="desk-fold.js"></script>
 </body>
