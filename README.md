@@ -192,14 +192,18 @@ fast enough: rAF is starved while the app compiles, and the cover was measured
 disappearing 71ms into a fast load — exactly the window it exists to hide. A
 `MutationObserver` on `document` re-attaches it as a microtask instead.
 
-The mark is a peak drawn in the site's gold, not the ⛰️ emoji, which would read
-as clip art next to this typography. It is built from **straight segments, not
-curves** — two earlier attempts used bezier shoulders and both read as a bell
-curve however much the summit was sharpened. The roundness was the problem, not
-the apex; faceted lines read as rock. The summit is broad and set left of centre
-with a long shoulder falling east, and a fainter ridge sits behind it. Floor,
-ridge and wall are staggered so the mark builds rather than appearing at once,
-and the name rises under it.
+The mark is a dark rock mass with its summit edge catching gold — El Capitan at
+dawn, which is what the hero photograph is doing. The rim deliberately stops at
+the summit's east side rather than tracing the whole outline, so the gold reads
+as light falling from the west rather than as a border. Straight segments, not
+curves: bezier shoulders read as a bell curve at this size, whatever is done to
+the apex. Chosen from six prototypes rendered side by side rather than iterated
+blind.
+
+The sequence — ground, then the rock rising, then the light landing on it, then
+the name — is driven from elapsed time in JS, **not** CSS keyframes. Re-inserting
+an element restarts its CSS animations, and this overlay is re-attached when
+`documentElement` is swapped, so the mark visibly drew and then started over.
 
 Verified across throttled, cold and warm loads: **0 frames** with the raw
 template exposed. A 9s hard timeout tears it down regardless, so it can never

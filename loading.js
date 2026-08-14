@@ -49,13 +49,24 @@
     // the roundness was the problem, not the apex. Faceted lines read as rock.
     // The summit is broad and set left of centre, with a long shoulder falling
     // east: El Capitan's proportions rather than a generic peak.
+    // A dark mass with the summit edge catching light — El Capitan at dawn,
+    // which is the same thing the hero photograph is doing. Straight segments,
+    // not curves: bezier shoulders read as a bell curve at this size.
+    //
+    // The rim deliberately stops at the summit's east side rather than tracing
+    // the whole outline, so the gold reads as light falling from the west
+    // instead of as a border.
     el.innerHTML =
       '<svg class="boot-peak" viewBox="0 0 120 72" aria-hidden="true">' +
-      '<polyline class="ridge" pathLength="100"' +
-      ' points="0,66 24,58 40,45 54,50 70,41 88,57 120,66"/>' +
-      '<polyline class="peak" pathLength="100"' +
-      ' points="4,65 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,65"/>' +
+      '<defs><linearGradient id="bootRock" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="oklch(0.30 0.012 258)"/>' +
+      '<stop offset="1" stop-color="oklch(0.17 0.006 260)"/>' +
+      '</linearGradient></defs>' +
       '<path class="base" pathLength="100" d="M0,66.5 L120,66.5"/>' +
+      '<polygon class="mass" fill="url(#bootRock)"' +
+      ' points="4,66 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,66"/>' +
+      '<polyline class="rim" pathLength="100"' +
+      ' points="20,61 31,26 42,14 52,12 60,20"/>' +
       '</svg>' +
       '<div class="boot-mark">DARYL ECHEAZU</div>';
 
@@ -68,27 +79,21 @@
       // Lifting slightly as it goes makes the reveal feel like the cover
       // clearing rather than the page blinking.
       "#boot[data-off]{opacity:0;transform:translateY(-10px);pointer-events:none}",
-      "#boot .boot-peak{width:150px;height:auto;overflow:visible}",
-      "#boot .boot-peak path,#boot .boot-peak polyline{fill:none;",
-      "stroke-linecap:round;stroke-linejoin:round;",
-      "stroke-dasharray:100;stroke-dashoffset:100}",
-      // Staggered so the valley floor arrives first, then the ridge, then the
-      // wall — it builds rather than appearing all at once.
-      "#boot .boot-peak .base{stroke:oklch(0.30 0.005 260);stroke-width:1;",
-      "animation:bootDraw .5s ease-out forwards}",
-      "#boot .boot-peak .ridge{stroke:oklch(0.42 0.02 250);stroke-width:1.6;",
-      "animation:bootDraw .85s cubic-bezier(.35,0,.2,1) .12s forwards}",
-      "#boot .boot-peak .peak{stroke:" + GOLD + ";stroke-width:2.4;",
-      "filter:drop-shadow(0 0 10px oklch(0.86 0.13 85 / .38));",
-      "animation:bootDraw 1.15s cubic-bezier(.35,0,.2,1) .22s forwards}",
-      "@keyframes bootDraw{to{stroke-dashoffset:0}}",
+      // No CSS keyframes for the mark. The overlay is detached and re-attached
+      // when documentElement is swapped, and re-inserting an element RESTARTS
+      // its CSS animations — the mark was visibly drawing, then starting over.
+      // paint() below drives these from elapsed time instead, so the sequence is
+      // continuous however many times the element is re-inserted.
+      "#boot .boot-peak{width:154px;height:auto;overflow:visible}",
+      "#boot .boot-peak .base,#boot .boot-peak .rim{fill:none;",
+      "stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100}",
+      "#boot .boot-peak .base{stroke:oklch(0.30 0.005 260);stroke-width:1}",
+      "#boot .boot-peak .rim{stroke:" + GOLD + ";stroke-width:2.2;",
+      "filter:drop-shadow(0 0 9px oklch(0.86 0.13 85 / .45))}",
       // Geist has not loaded this early — it arrives with the bundle — so this
       // deliberately names a system mono fallback that degrades gracefully.
       "#boot .boot-mark{font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;",
-      "font-size:11px;letter-spacing:.34em;color:" + INK + ";",
-      "opacity:0;transform:translateY(4px);",
-      "animation:bootName .7s cubic-bezier(.2,.8,.25,1) .42s forwards}",
-      "@keyframes bootName{to{opacity:.9;transform:none}}",
+      "font-size:11px;letter-spacing:.34em;color:" + INK + ";opacity:0}",
       // The bundler's own status text sits bottom-right; the cover is above it,
       // but hide it so it cannot flash during the fade.
       "#__bundler_loading{display:none !important}"
@@ -138,9 +143,37 @@
     }, 500);
   }
 
+  // Drives the mark from elapsed time rather than CSS keyframes — see the note
+  // in css(). Ground, then the rock rises, then the light lands on it.
+  function ease(p) { return 1 - Math.pow(1 - p, 3); }
+  function seg(t, delay, dur) {
+    return ease(Math.max(0, Math.min(1, (t - delay) / dur)));
+  }
+
+  function paint(t) {
+    if (!el) return;
+    var base = el.querySelector(".base"),
+        mass = el.querySelector(".mass"),
+        rim = el.querySelector(".rim"),
+        name = el.querySelector(".boot-mark");
+    if (base) base.style.strokeDashoffset = (100 * (1 - seg(t, 0, 450))).toFixed(2);
+    if (mass) {
+      var m = seg(t, 100, 620);
+      mass.style.opacity = m.toFixed(3);
+      mass.style.transform = "translateY(" + (7 * (1 - m)).toFixed(2) + "px)";
+    }
+    if (rim) rim.style.strokeDashoffset = (100 * (1 - seg(t, 250, 700))).toFixed(2);
+    if (name) {
+      var n = seg(t, 420, 700);
+      name.style.opacity = (0.9 * n).toFixed(3);
+      name.style.transform = "translateY(" + (4 * (1 - n)).toFixed(2) + "px)";
+    }
+  }
+
   function tick() {
     attach();
     var waited = Date.now() - start;
+    paint(waited);
     if (waited > TIMEOUT) { finish(); return; }
     if (rendered() && waited > MIN_SHOW) { finish(); return; }
     requestAnimationFrame(tick);
