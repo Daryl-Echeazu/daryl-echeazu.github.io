@@ -119,17 +119,13 @@
   /* ── D. DESK (reworked) ───────────────────────────────────── */
   #desk .surface{position:relative;max-width:860px;min-height:470px;border-radius:8px;
     display:flex;align-items:center;padding:46px 52px;overflow:hidden;
-    background:
-      radial-gradient(140% 110% at 12% -10%, oklch(0.33 0.045 62 / .85), transparent 58%),
-      radial-gradient(90% 80% at 100% 110%, oklch(0.10 0.01 50 / .9), transparent 60%),
-      linear-gradient(174deg, oklch(0.245 0.035 58), oklch(0.185 0.026 54));
-    box-shadow:inset 0 0 120px oklch(0 0 0 / .7), 0 24px 60px oklch(0 0 0 / .5)}
-  /* grain: fine directional streaks plus a subtle knot, not a flat stripe pattern */
-  #desk .grain{position:absolute;inset:0;pointer-events:none;opacity:.5;
-    background:
-      repeating-linear-gradient(93deg, oklch(1 0 0 / .022) 0 1px, transparent 1px 4px),
-      repeating-linear-gradient(93deg, oklch(0 0 0 / .05) 0 2px, transparent 2px 11px),
-      repeating-linear-gradient(91deg, oklch(0 0 0 / .035) 0 1px, transparent 1px 27px)}
+    background-color:#33220f;
+    background-image:
+      radial-gradient(120% 100% at 8% -12%, rgba(255,214,150,.16), transparent 55%),
+      radial-gradient(100% 90% at 105% 115%, rgba(0,0,0,.55), transparent 62%),
+      var(--wood);
+    background-size:cover;background-position:center;
+    box-shadow:inset 0 0 130px rgba(0,0,0,.62), 0 24px 60px rgba(0,0,0,.5)}
   #desk .ring{position:absolute;border-radius:50%;pointer-events:none;
     border:6px solid oklch(0.44 0.075 58 / .30);filter:blur(1.1px)}
   #desk .ring.r1{right:74px;top:52px;width:104px;height:100px;transform:rotate(-8deg)}
@@ -156,15 +152,17 @@
     transform:rotate(-1.8deg);
     /* two shadows: a tight contact one and a wide soft one, which is what sells
        an object resting on a surface rather than floating over it */
-    box-shadow:0 2px 3px oklch(0 0 0 / .45), 0 30px 54px oklch(0 0 0 / .55);
+    box-shadow:1px 2px 2px rgba(0,0,0,.42), 10px 26px 44px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.5);
     /* Rules and paper tint must be layers of ONE background-image, with an
        explicit background-color underneath. Declaring `background:` and then
        `background-image:` wipes the first — the sheet rendered transparent and
        the desk showed straight through it. */
-    background-color:oklch(0.95 0.014 90);
+    background-color:#efe9dc;
     background-image:
-      repeating-linear-gradient(transparent 0 31px, oklch(0.72 0.05 240 / .38) 31px 32px),
-      linear-gradient(178deg, oklch(0.975 0.010 92), oklch(0.925 0.018 88));
+      repeating-linear-gradient(transparent 0 31px, rgba(120,150,196,.30) 31px 32px),
+      var(--paper);
+    background-size:auto, cover;
     transition:transform .9s var(--ease),opacity .9s var(--ease)}
   /* Ruled paper only works if the writing sits ON the rules. Everything below
      is locked to RULE = 32px: the header occupies exactly two rules, the
@@ -349,7 +347,6 @@
   <div class="lede"><h2>Leave it <em>on my desk.</em></h2>
     <p>Goes straight to my inbox. Anonymous is fine.</p></div>
   <div class="surface">
-    <div class="grain"></div>
     <div class="ring r1"></div><div class="ring r2"></div>
 
     <!-- things that are actually his, not generic desk dressing -->
@@ -468,6 +465,10 @@
     });
   });
 })();
+</script>
+<script type="module">
+  import { applyMaterials } from "./desk-scene.js";
+  applyMaterials(document.getElementById("desk"));
 </script>
 <script type="module" src="desk-fold.js"></script>
 </body>
