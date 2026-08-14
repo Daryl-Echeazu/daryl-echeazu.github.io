@@ -136,7 +136,7 @@
     transform:rotate(9deg);z-index:3;filter:drop-shadow(0 3px 4px oklch(0 0 0 / .5))}
   #desk .clip::after{content:"";position:absolute;left:6px;top:9px;width:14px;height:42px;
     border-radius:8px;border:3px solid oklch(0.72 0.02 250 / .6);border-bottom-color:transparent}
-  #desk .sheet{position:relative;width:min(430px,64%);margin-left:126px;
+  #desk .sheet{position:relative;width:min(452px,62%);margin-left:34px;
     color:oklch(0.24 0.024 58);padding:28px 30px 22px;border-radius:1px;
     transform:rotate(-1.8deg);
     /* two shadows: a tight contact one and a wide soft one, which is what sells
@@ -174,23 +174,10 @@
     background:oklch(0.62 0.15 25 / .35)}
 
   /* ── desk objects ─────────────────────────────────────────── */
-  #desk .sticky{position:absolute;left:34px;bottom:34px;width:112px;height:118px;
-    background:linear-gradient(170deg, oklch(0.92 0.13 105), oklch(0.86 0.14 100));
-    transform:rotate(-5deg);padding:12px 10px;box-sizing:border-box;text-align:center;
-    box-shadow:0 2px 2px oklch(0 0 0 / .35), 0 16px 26px oklch(0 0 0 / .45);
-    color:oklch(0.30 0.06 80)}
-  #desk .sticky b{display:block;font-family:'Geist Mono',monospace;font-size:8.5px;
-    letter-spacing:.18em;opacity:.75}
-  #desk .sticky em{display:block;font-family:'Instrument Serif',serif;font-style:normal;
-    font-size:38px;line-height:1.25}
-  #desk .sticky span{display:block;font-family:'Instrument Serif',serif;font-style:italic;
-    font-size:11.5px;opacity:.8;line-height:1.3}
 
   /* Objects share one light: highlights up-left, shadows down-right. */
   #desk .obj{position:absolute;pointer-events:none}
   #desk .obj svg{width:100%;height:auto;display:block}
-  #desk .cube{left:26px;top:34px;width:96px;transform:rotate(-4deg);
-    filter:drop-shadow(7px 13px 12px rgba(0,0,0,.62))}
   #desk .can{right:66px;top:20px;width:60px;transform:rotate(3deg);
     filter:drop-shadow(9px 15px 14px rgba(0,0,0,.6))}
   #desk .kb{right:12px;bottom:12px;width:286px;transform:rotate(-5deg);
@@ -329,15 +316,9 @@
     <div class="ring r1"></div><div class="ring r2"></div>
 
     <!-- his actual desk, not generic dressing -->
-    <div class="obj cube"></div>
     <div class="obj can"></div>
     <div class="obj kb"></div>
     <div class="obj mouse"></div>
-    <div class="sticky">
-      <b>ZETAMAC</b>
-      <em>125</em>
-      <span>next stop 130</span>
-    </div>
     <div class="clip"></div>
 
     <div class="sheet">
@@ -445,11 +426,10 @@
 })();
 </script>
 <script type="module">
-  import { applyMaterials, keyboardSVG, mouseSVG, canSVG, cubeSVG }
+  import { applyMaterials, keyboardSVG, mouseSVG, canSVG }
     from "./desk-scene.js";
   const desk = document.getElementById("desk");
   applyMaterials(desk);
-  desk.querySelector(".cube").innerHTML = cubeSVG();
   desk.querySelector(".can").innerHTML = canSVG();
   desk.querySelector(".kb").innerHTML = keyboardSVG();
   desk.querySelector(".mouse").innerHTML = mouseSVG();
