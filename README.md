@@ -192,13 +192,16 @@ fast enough: rAF is starved while the app compiles, and the cover was measured
 disappearing 71ms into a fast load — exactly the window it exists to hide. A
 `MutationObserver` on `document` re-attaches it as a microtask instead.
 
-The mark is a dark rock mass with its summit edge catching gold — El Capitan at
-dawn, which is what the hero photograph is doing. The rim deliberately stops at
-the summit's east side rather than tracing the whole outline, so the gold reads
-as light falling from the west rather than as a border. Straight segments, not
-curves: bezier shoulders read as a bell curve at this size, whatever is done to
-the apex. Chosen from six prototypes rendered side by side rather than iterated
-blind.
+The mark is a dark rock mass with the site's gold tracing its full silhouette.
+Straight segments, not curves: bezier shoulders read as a bell curve at this
+size whatever is done to the apex.
+
+Two earlier versions lit only the west face, on the theory that a partial rim
+would read as light falling across the summit. It does at thumbnail size and it
+does not at 176px on a dark screen — the shape never closes, so it reads as a
+stray gold tick beside a smudge. The lesson was about how it was judged: small
+comparison cells flattered a mark that failed in situ. Candidates are now
+rendered at actual display size before choosing.
 
 The sequence — ground, then the rock rising, then the light landing on it, then
 the name — is driven from elapsed time in JS, **not** CSS keyframes. Re-inserting

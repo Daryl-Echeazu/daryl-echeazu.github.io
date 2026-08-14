@@ -59,14 +59,20 @@
     el.innerHTML =
       '<svg class="boot-peak" viewBox="0 0 120 72" aria-hidden="true">' +
       '<defs><linearGradient id="bootRock" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="oklch(0.30 0.012 258)"/>' +
-      '<stop offset="1" stop-color="oklch(0.17 0.006 260)"/>' +
+      '<stop offset="0" stop-color="oklch(0.34 0.014 258)"/>' +
+      '<stop offset="1" stop-color="oklch(0.18 0.007 260)"/>' +
       '</linearGradient></defs>' +
       '<path class="base" pathLength="100" d="M0,66.5 L120,66.5"/>' +
       '<polygon class="mass" fill="url(#bootRock)"' +
       ' points="4,66 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,66"/>' +
+      // The gold traces the WHOLE silhouette, not just the lit face. Two
+      // earlier versions lit only the west side on the theory that it would
+      // read as light falling — at actual size it read as a stray tick beside
+      // a smudge, because the shape never closes. Judged against alternatives
+      // rendered full-size rather than in small comparison cells, which is
+      // what hid the problem the first time.
       '<polyline class="rim" pathLength="100"' +
-      ' points="20,61 31,26 42,14 52,12 60,20"/>' +
+      ' points="4,66 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,66"/>' +
       '</svg>' +
       '<div class="boot-mark">DARYL ECHEAZU</div>';
 
@@ -84,10 +90,10 @@
       // its CSS animations — the mark was visibly drawing, then starting over.
       // paint() below drives these from elapsed time instead, so the sequence is
       // continuous however many times the element is re-inserted.
-      "#boot .boot-peak{width:154px;height:auto;overflow:visible}",
+      "#boot .boot-peak{width:176px;height:auto;overflow:visible}",
       "#boot .boot-peak .base,#boot .boot-peak .rim{fill:none;",
       "stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100}",
-      "#boot .boot-peak .base{stroke:oklch(0.30 0.005 260);stroke-width:1}",
+      "#boot .boot-peak .base{stroke:oklch(0.32 0.005 260);stroke-width:1}",
       "#boot .boot-peak .rim{stroke:" + GOLD + ";stroke-width:2.2;",
       "filter:drop-shadow(0 0 9px oklch(0.86 0.13 85 / .45))}",
       // Geist has not loaded this early — it arrives with the bundle — so this
@@ -162,7 +168,7 @@
       mass.style.opacity = m.toFixed(3);
       mass.style.transform = "translateY(" + (7 * (1 - m)).toFixed(2) + "px)";
     }
-    if (rim) rim.style.strokeDashoffset = (100 * (1 - seg(t, 250, 700))).toFixed(2);
+    if (rim) rim.style.strokeDashoffset = (100 * (1 - seg(t, 220, 720))).toFixed(2);
     if (name) {
       var n = seg(t, 420, 700);
       name.style.opacity = (0.9 * n).toFixed(3);
