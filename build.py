@@ -299,6 +299,17 @@ DESCENDERS = [
      'padding: 0.05em 0.1em 0.34em 0.1em; margin-bottom: -0.19em;'),
 ]
 
+# ── 6b. Recently: gold the Apple entry ───────────────────────────────────────
+# The Recently list mixes plain entries with gold ones (`this.goldTextStyle`) —
+# "Met Tim Cook and John Ternus" and "Zetamac PB hit 125" are gold, and joining
+# Apple sat in plain grey between them. Wrapped exactly the way the Zetamac
+# entry is, so it inherits the same colour rather than a hand-matched copy of it.
+RECENTLY = [
+    ('what: \\"Joined Apple as a Machine Learning Engineering intern.\\" }',
+     'what: React.createElement(\\"span\\", { style: this.goldTextStyle }, '
+     '\\"Joined Apple as a Machine Learning Engineering intern.\\") }'),
+]
+
 # ── 6. Trailing space at the bottom of scrolling pages ───────────────────────
 # Each scrolling section carries a large bottom padding (70/60/80px). Under the
 # wide-viewport zoom that is multiplied too, so scrolled fully to the bottom the
@@ -673,6 +684,21 @@ def main():
         else:
             print("descenders   : SKIPPED — a gradient-text padding not found")
     print("descenders   : %d of %d gradient texts un-clipped" % (dn, len(DESCENDERS)))
+
+    # ── Recently: gold the Apple entry ───────────────────────────────────────
+    gn = 0
+    for frm, to in RECENTLY:
+        if to in html:
+            gn += 1
+        elif frm in html:
+            if html.count(frm) != 1:
+                sys.exit("ERROR: Recently entry %r appears %d times"
+                         % (frm[:40], html.count(frm)))
+            html = html.replace(frm, to)
+            gn += 1
+        else:
+            print("recently    : SKIPPED — %r not found" % frm[:40])
+    print("recently    : %d of %d entries golded" % (gn, len(RECENTLY)))
 
     # ── Bottom padding of scrolling pages ────────────────────────────────────
     done = sum(1 for _, to in PADS if to in html)
