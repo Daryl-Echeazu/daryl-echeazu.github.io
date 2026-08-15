@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Favicon demos — Daryl Echeazu</title>
+<!-- Swapped at runtime by the buttons below. Starts on the current live one so
+     the first thing you see in the tab is the problem, not a candidate. -->
+<link id="live" rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root{
+    --bg:#0e0f12; --panel:#17181c; --ink:#e9e6df; --dim:#8d8a84;
+    --gold:#f8ca65; --line:#26272c;
+    --chrome-dark:#35363a; --chrome-light:#dee1e6;
+    --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    padding:44px 32px 80px;max-width:1080px;margin:0 auto}
+  h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:34px;margin:0 0 6px}
+  .sub{color:var(--dim);margin:0 0 34px;font-size:14px}
+  .sub code{font-family:var(--mono);font-size:12.5px;color:var(--gold)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:22px;margin-bottom:20px}
+  .card.current{border-color:#4a2f2f;background:#191416}
+  .head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .key{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--gold)}
+  .name{font-size:17px}
+  .why{color:var(--dim);font-size:13.5px;margin:0 0 18px;max-width:66ch}
+
+  .rows{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end}
+  .bit{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .bit span{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--dim)}
+  /* Nearest-neighbour so the 16px grid is visible when blown up — you are
+     judging what the browser actually rasterises, not a smooth resample. */
+  .zoom{image-rendering:pixelated}
+
+  /* A fake browser tab, because a favicon is only ever seen inside one. */
+  .tab{display:flex;align-items:center;gap:9px;border-radius:9px 9px 0 0;
+    padding:9px 18px 9px 12px;font-size:12.5px;width:250px}
+  .tab.dark{background:var(--chrome-dark);color:#e8eaed}
+  .tab.light{background:var(--chrome-light);color:#202124}
+  .tab img{width:16px;height:16px;flex:none}
+
+  button{font-family:var(--mono);font-size:11px;letter-spacing:.12em;cursor:pointer;
+    background:transparent;color:var(--gold);border:1px solid #4a412c;
+    border-radius:999px;padding:9px 16px;margin-top:18px}
+  button:hover{background:#211d14}
+  button.on{background:var(--gold);color:#14151a;border-color:var(--gold)}
+  .note{margin-top:34px;color:var(--dim);font-size:13px;max-width:74ch}
+  .note b{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+
+<h1>Favicon prototypes</h1>
+<p class="sub">Every icon below is a real file. <b>Click “Show in tab”</b> and look up at
+this page’s own tab — that is the only size and setting that decides this.
+Built from the site’s own materials: gold <code>oklch(0.86 0.13 85)</code>,
+Instrument Serif, and the El&nbsp;Capitan polyline from the loading screen.</p>
+
+<div id="list"></div>
+
+<p class="note">
+  <b>Why the current one disappears:</b> it is a near-black tile
+  (<code style="font-family:var(--mono);color:var(--gold)">#17181c</code>) on a
+  dark browser bar, with small letters inside heavy padding. Nothing is broken —
+  it is wired up and served correctly. It is just invisible.
+  <br><br>
+  <b>Also:</b> <code style="font-family:var(--mono);color:var(--gold)">/favicon.ico</code>
+  currently 404s. Each candidate here ships a matching multi-size
+  <code style="font-family:var(--mono);color:var(--gold)">.ico</code> (16/32/48) as well,
+  so whichever you pick closes that too.
+</p>
+
+<script>
+const CANDS = [
+  { key:"CURRENT", file:"favicon.png", name:"What the site has now",
+    why:"Near-black tile, small letters. Correctly installed, and invisible against dark browser chrome — this is the one in your screenshot.",
+    current:true },
+  { key:"A", file:"favicon-demos/a-de-on-gold.png", name:"“DE” on gold",
+    why:"Your existing initials, inverted so the gold fills the tile. Keeps the identity you already picked and fixes the only real problem." },
+  { key:"B", file:"favicon-demos/b-mark-on-gold.png", name:"El Capitan on gold",
+    why:"The same polyline the loading screen draws. Ties the icon to the hero photo and The Valley. More distinctive than initials, though at 16px it reads as a peak rather than as El Capitan specifically." },
+  { key:"C", file:"favicon-demos/c-mark-on-dark.png", name:"Gold El Capitan on dark",
+    why:"Closest to the site's own palette, and the strongest of the four on a light browser theme. The quietest on a dark one — it keeps a dark tile, which is what ails the current icon." },
+  { key:"D", file:"favicon-demos/d-d-on-gold.png", name:"Single “D” on gold",
+    why:"One letter instead of two, so it survives 16px better than anything else here. A lone D identifies you less than DE does." },
+];
+
+const list = document.getElementById("list");
+let live = document.getElementById("live");   // reassigned on every swap
+
+CANDS.forEach(c => {
+  const el = document.createElement("div");
+  el.className = "card" + (c.current ? " current" : "");
+  el.innerHTML = `
+    <div class="head"><span class="key">${c.key}</span><span class="name">${c.name}</span></div>
+    <p class="why">${c.why}</p>
+    <div class="rows">
+      <div class="bit"><img src="${c.file}" width="16" height="16" alt=""><span>16 · REAL</span></div>
+      <div class="bit"><img src="${c.file}" width="32" height="32" alt=""><span>32</span></div>
+      <div class="bit"><img src="${c.file}" width="64" height="64" alt=""><span>64</span></div>
+      <div class="bit"><img class="zoom" src="${c.file}" width="96" height="96" alt=""><span>SOURCE</span></div>
+      <div class="bit">
+        <div class="tab dark"><img src="${c.file}" alt="">darylecheazu.me</div>
+        <span>DARK CHROME</span>
+      </div>
+      <div class="bit">
+        <div class="tab light"><img src="${c.file}" alt="">darylecheazu.me</div>
+        <span>LIGHT CHROME</span>
+      </div>
+    </div>
+    <button data-file="${c.file}">SHOW IN TAB</button>`;
+  list.appendChild(el);
+});
+
+list.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  // Some browsers ignore an href change on an existing <link>; replacing the
+  // element outright is the reliable way to force a re-fetch.
+  const fresh = document.createElement("link");
+  fresh.rel = "icon";
+  fresh.type = "image/png";
+  fresh.href = b.dataset.file + "?v=" + Date.now();
+  fresh.id = "live";
+  live.replaceWith(fresh);
+  live = fresh;              // or the next click would act on a detached node
+  list.querySelectorAll("button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  b.textContent = "IN THE TAB NOW ↑";
+  setTimeout(() => { b.textContent = "SHOW IN TAB"; }, 2400);
+});
+</script>
+</body>
+</html>
