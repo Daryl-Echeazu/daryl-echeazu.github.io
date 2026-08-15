@@ -119,6 +119,10 @@
   /* ── D. DESK (reworked) ───────────────────────────────────── */
   #desk .surface{position:relative;max-width:860px;min-height:470px;border-radius:8px;
     display:flex;align-items:center;padding:46px 52px;overflow:hidden;
+    /* The tray is drawn in perspective, so the note has to be able to lie down
+       into it. One perspective on the surface puts the note and the tray in the
+       same imaginary camera; desk-fold.js aims perspective-origin at the tray. */
+    perspective:900px;
     background-color:#33220f;
     background-image:
       radial-gradient(120% 100% at 8% -12%, rgba(255,214,150,.16), transparent 55%),
@@ -131,12 +135,7 @@
   #desk .ring.r1{right:74px;top:52px;width:104px;height:100px;transform:rotate(-8deg)}
   #desk .ring.r2{right:96px;top:74px;width:64px;height:62px;border-width:4px;
     border-color:oklch(0.44 0.075 58 / .20);filter:blur(1.6px)}
-  #desk .clip{position:absolute;left:38px;top:78px;width:26px;height:62px;border-radius:13px;
-    border:3px solid oklch(0.72 0.02 250 / .75);border-bottom-color:transparent;
-    transform:rotate(9deg);z-index:3;filter:drop-shadow(0 3px 4px oklch(0 0 0 / .5))}
-  #desk .clip::after{content:"";position:absolute;left:6px;top:9px;width:14px;height:42px;
-    border-radius:8px;border:3px solid oklch(0.72 0.02 250 / .6);border-bottom-color:transparent}
-  #desk .sheet{position:relative;width:min(452px,62%);margin-left:34px;
+  #desk .sheet{position:relative;width:min(374px,50%);margin-left:150px;
     color:oklch(0.24 0.024 58);padding:28px 30px 22px;border-radius:1px;
     transform:rotate(-1.8deg);
     /* two shadows: a tight contact one and a wide soft one, which is what sells
@@ -178,12 +177,30 @@
   /* Objects share one light: highlights up-left, shadows down-right. */
   #desk .obj{position:absolute;pointer-events:none}
   #desk .obj svg{width:100%;height:auto;display:block}
-  #desk .can{right:66px;top:20px;width:60px;transform:rotate(3deg);
+  #desk .can{right:206px;top:30px;width:54px;transform:rotate(3deg);
     filter:drop-shadow(9px 15px 14px rgba(0,0,0,.6))}
-  #desk .kb{right:12px;bottom:12px;width:286px;transform:rotate(-5deg);
+  #desk .kb{right:24px;bottom:24px;width:282px;transform:rotate(-5deg);
     filter:drop-shadow(8px 14px 16px rgba(0,0,0,.6))}
-  #desk .mouse{right:6px;bottom:150px;width:50px;transform:rotate(-12deg);
+  #desk .mouse{right:36px;bottom:148px;width:48px;transform:rotate(-12deg);
     filter:drop-shadow(7px 12px 12px rgba(0,0,0,.6))}
+
+  /* a deskmat, which is what makes a keyboard and mouse read as a setup */
+  #desk .mat{position:absolute;right:6px;bottom:6px;width:348px;height:206px;
+    border-radius:9px;background:#191b20;
+    background-image:radial-gradient(120% 100% at 20% 0%, rgba(255,255,255,.05), transparent 60%);
+    box-shadow:0 2px 2px rgba(0,0,0,.5), 6px 14px 26px rgba(0,0,0,.5),
+      inset 0 0 0 2px rgba(255,255,255,.045)}
+  #desk .tray{right:14px;top:14px;width:172px;transform:rotate(2deg);
+    filter:drop-shadow(8px 14px 14px rgba(0,0,0,.62))}
+  /* Same box as .tray, drawn again above the flying note (z 9) so the near wall
+     crosses in front of it and the note reads as IN the tray, not on it. */
+  #desk .trayfront{right:14px;top:14px;width:172px;transform:rotate(2deg);z-index:12}
+  #desk .hp{left:16px;top:26px;width:124px;transform:rotate(-9deg);
+    filter:drop-shadow(8px 14px 14px rgba(0,0,0,.6))}
+  #desk .chips{left:30px;bottom:40px;width:74px;transform:rotate(4deg);
+    filter:drop-shadow(7px 11px 11px rgba(0,0,0,.6))}
+  #desk .biner{left:116px;bottom:34px;width:40px;transform:rotate(16deg);
+    filter:drop-shadow(6px 10px 10px rgba(0,0,0,.6))}
 
   /* the dart the note becomes */
   #desk .dart{position:absolute;width:120px;pointer-events:none;opacity:0;z-index:8}
@@ -316,10 +333,15 @@
     <div class="ring r1"></div><div class="ring r2"></div>
 
     <!-- his actual desk, not generic dressing -->
+    <div class="mat"></div>
+    <div class="obj tray"></div>
+    <div class="obj trayfront"></div>
     <div class="obj can"></div>
+    <div class="obj hp"></div>
+    <div class="obj chips"></div>
+    <div class="obj biner"></div>
     <div class="obj kb"></div>
     <div class="obj mouse"></div>
-    <div class="clip"></div>
 
     <div class="sheet">
       <div class="head"><span>TO: DARYL ECHEAZU</span><span class="today"></span></div>
@@ -329,9 +351,9 @@
       </div>
     </div>
   </div>
-  <button class="send">FOLD &amp; SEND</button>
-  <div class="note">The desk, with the fold-and-fly send worked in. Writing sits on the
-    rules rather than floating between them, and the note folds itself before it goes.</div>
+  <button class="send">SEND</button>
+  <div class="note">The note goes into the inbox tray — which is what the page is.
+    Throwing it as a paper plane across a desk never made sense.</div>
   <button class="again">SEND ANOTHER</button>
 </section>
 
@@ -426,13 +448,19 @@
 })();
 </script>
 <script type="module">
-  import { applyMaterials, keyboardSVG, mouseSVG, canSVG }
+  import { applyMaterials, keyboardSVG, mouseSVG, canSVG, traySVG, trayFrontSVG,
+           headphonesSVG, chipsSVG, binerSVG }
     from "./desk-scene.js";
   const desk = document.getElementById("desk");
   applyMaterials(desk);
   desk.querySelector(".can").innerHTML = canSVG();
   desk.querySelector(".kb").innerHTML = keyboardSVG();
   desk.querySelector(".mouse").innerHTML = mouseSVG();
+  desk.querySelector(".tray").innerHTML = traySVG();
+  desk.querySelector(".trayfront").innerHTML = trayFrontSVG();
+  desk.querySelector(".hp").innerHTML = headphonesSVG();
+  desk.querySelector(".chips").innerHTML = chipsSVG();
+  desk.querySelector(".biner").innerHTML = binerSVG();
 </script>
 <script type="module" src="desk-fold.js"></script>
 </body>

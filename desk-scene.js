@@ -256,6 +256,114 @@ export function cubeSVG() {
   </svg>`;
 }
 
+/* The inbox tray the note actually goes into. Wire mesh, seen from slightly
+   above so there is a visible mouth to drop into. */
+export function traySVG() {
+  // Drawn as an open box in perspective — floor, back panel, side rails, front
+  // lip — with a sheet already sitting in it. The first attempt was wire mesh
+  // rendered as vertical strokes over black, which read unmistakably as a
+  // hairbrush. A tray has to show its MOUTH or it is not a tray.
+  return `<svg viewBox="0 0 200 132" class="traysvg">
+    <defs>
+      <linearGradient id="trayIn" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stop-color="#23262b"/><stop offset="1" stop-color="#111316"/></linearGradient>
+      <linearGradient id="trayRail" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0" stop-color="#9aa1aa"/><stop offset="0.55" stop-color="#646b74"/>
+        <stop offset="1" stop-color="#3b4047"/></linearGradient>
+      <linearGradient id="trayLip" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#aab1ba"/><stop offset="1" stop-color="#5c636b"/></linearGradient>
+    </defs>
+    <!-- interior floor -->
+    <path d="M30,30 L170,30 L192,104 L8,104 Z" fill="url(#trayIn)"/>
+    <!-- a sheet already in the tray, so the purpose is legible at rest -->
+    <path d="M46,44 L156,44 L172,94 L28,94 Z" fill="#e8e2d4"/>
+    <path d="M46,44 L156,44 L158,50 L44,50 Z" fill="#d3ccbc"/>
+    <!-- Rule endpoints ride the sheet's own tapered edges (left 46->28, right
+         156->172 over y 44->94), inset two units. Squaring them off instead let
+         the lines poke past the right edge as blue nubs on the dark floor. -->
+    <g stroke="rgba(120,150,196,.5)" stroke-width="1.4">
+      <line x1="42.2" y1="60" x2="159.1" y2="60"/>
+      <line x1="37.9" y1="72" x2="163.0" y2="72"/>
+      <line x1="33.6" y1="84" x2="166.8" y2="84"/>
+    </g>
+    <!-- back panel and side rails -->
+    <path d="M30,30 L170,30 L170,20 L30,20 Z" fill="url(#trayRail)"/>
+    <path d="M30,30 L8,104 L0,100 L24,26 Z" fill="url(#trayRail)"/>
+    <path d="M170,30 L192,104 L200,100 L176,26 Z" fill="url(#trayRail)"/>
+    <!-- front lip, the part nearest the viewer -->
+    <path d="M8,104 L192,104 L196,120 L4,120 Z" fill="url(#trayLip)"/>
+    <text x="100" y="116" text-anchor="middle" font-family="Geist Mono, monospace"
+      font-size="9" letter-spacing="4" fill="#22262b">IN</text>
+    <path d="M4,120 L196,120 L192,124 L8,124 Z" fill="#2f343a"/>
+  </svg>`;
+}
+
+/* The tray's front lip again, on its own, to be stacked ABOVE the note.
+ *
+ * Without this the sent note lands on top of the whole tray and reads as a note
+ * propped against a stand. Paper in a tray is paper you can only partly see —
+ * the near wall crosses in front of it. Painting the lip twice (once in the
+ * tray, once here) costs nothing and is what makes the note read as inside
+ * rather than on top. Same viewBox as traySVG so it registers exactly. */
+export function trayFrontSVG() {
+  return `<svg viewBox="0 0 200 132" class="trayfrontsvg">
+    <defs>
+      <linearGradient id="trayLip2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#aab1ba"/><stop offset="1" stop-color="#5c636b"/></linearGradient>
+    </defs>
+    <path d="M8,104 L192,104 L196,120 L4,120 Z" fill="url(#trayLip2)"/>
+    <text x="100" y="116" text-anchor="middle" font-family="Geist Mono, monospace"
+      font-size="9" letter-spacing="4" fill="#22262b">IN</text>
+    <path d="M4,120 L196,120 L192,124 L8,124 Z" fill="#2f343a"/>
+  </svg>`;
+}
+
+/* Over-ear headphones, resting on one cup. */
+export function headphonesSVG() {
+  return `<svg viewBox="0 0 150 112" class="hpsvg">
+    <defs><linearGradient id="hpc" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#3d4249"/><stop offset="0.55" stop-color="#23272c"/>
+      <stop offset="1" stop-color="#141619"/></linearGradient></defs>
+    <path d="M28,72 C22,26 128,26 122,72" stroke="#2a2e34" stroke-width="11"
+      fill="none" stroke-linecap="round"/>
+    <path d="M28,68 C24,30 126,30 122,68" stroke="rgba(255,255,255,.13)" stroke-width="3"
+      fill="none" stroke-linecap="round"/>
+    <ellipse cx="28" cy="80" rx="25" ry="27" fill="url(#hpc)"/>
+    <ellipse cx="28" cy="80" rx="15" ry="17" fill="#0d0f11"/>
+    <ellipse cx="122" cy="80" rx="25" ry="27" fill="url(#hpc)"/>
+    <ellipse cx="122" cy="80" rx="15" ry="17" fill="#0d0f11"/>
+    <ellipse cx="22" cy="70" rx="8" ry="6" fill="rgba(255,255,255,.10)"/>
+  </svg>`;
+}
+
+/* A short stack of chips. */
+export function chipsSVG() {
+  const chip = (y, c1, c2) => `
+    <ellipse cx="46" cy="${y + 7}" rx="40" ry="14" fill="#0e1013" opacity=".5"/>
+    <path d="M6,${y} L6,${y + 7} A40,14 0 0 0 86,${y + 7} L86,${y} Z" fill="${c2}"/>
+    <ellipse cx="46" cy="${y}" rx="40" ry="14" fill="${c1}"/>
+    <ellipse cx="46" cy="${y}" rx="27" ry="9" fill="none" stroke="${c2}" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 92 92" class="chipsvg">
+    ${chip(66, "#2f3a52", "#1d2435")}
+    ${chip(52, "#8d2f34", "#5e1f23")}
+    ${chip(38, "#e9e5dc", "#b9b3a6")}
+  </svg>`;
+}
+
+/* A carabiner — the one thing on the desk that is not indoors. */
+export function binerSVG() {
+  return `<svg viewBox="0 0 64 116" class="bnsvg">
+    <defs><linearGradient id="bn" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0" stop-color="#e0b25a"/><stop offset="0.45" stop-color="#b3822f"/>
+      <stop offset="1" stop-color="#6f4f18"/></linearGradient></defs>
+    <path d="M32,6 C50,6 58,22 58,52 C58,84 48,110 32,110 C16,110 6,84 6,52
+             C6,22 14,6 32,6 Z" fill="none" stroke="url(#bn)" stroke-width="9"
+             stroke-linecap="round"/>
+    <path d="M32,6 C22,14 18,32 18,52" stroke="#3a3f46" stroke-width="6"
+      fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
 export function applyMaterials(root) {
   root.style.setProperty("--wood", `url("${woodTexture()}")`);
   root.style.setProperty("--paper", `url("${paperTexture()}")`);
