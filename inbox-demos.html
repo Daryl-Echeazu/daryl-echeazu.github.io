@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Inbox — design demos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:oklch(0.13 0.005 260); --ink:oklch(0.94 0.005 260);
+    --muted:oklch(0.58 0.005 260); --gold:oklch(0.86 0.13 85);
+    --line:oklch(0.24 0.005 260);
+    --ease:cubic-bezier(.2,.8,.25,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Geist',Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+
+  header{position:sticky;top:0;z-index:20;background:oklch(0.13 0.005 260 / .92);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+    padding:14px 22px;display:flex;gap:22px;align-items:baseline;flex-wrap:wrap}
+  header .t{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.18em;
+    color:var(--muted)}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    color:var(--muted);background:none;border:1px solid oklch(0.26 0.005 260);
+    border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .3s var(--ease)}
+  nav button:hover{color:var(--ink)}
+  nav button[aria-selected="true"]{color:oklch(0.16 0.02 90);background:var(--gold);
+    border-color:var(--gold)}
+
+  main{max-width:1080px;margin:0 auto;padding:38px 22px 90px}
+  .demo{display:none}
+  .demo[data-on]{display:block;animation:in .5s var(--ease)}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .lede h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;
+    font-size:clamp(30px,5vw,50px);margin:0 0 8px;line-height:1.05}
+  .lede h2 em{font-style:italic}
+  .lede p{margin:0 0 30px;color:oklch(0.72 0.005 260);font-size:15.5px}
+  .note{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.16em;
+    color:var(--muted);margin-top:26px}
+  .again{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.16em;
+    background:none;border:1px solid oklch(0.26 0.005 260);color:var(--muted);
+    border-radius:999px;padding:7px 13px;cursor:pointer;margin-top:18px;display:none}
+  .sent .again{display:inline-block}
+
+  /* ── A. PAPER ─────────────────────────────────────────────── */
+  #paper .sheet{position:relative;max-width:620px;background:oklch(0.96 0.012 92);
+    color:oklch(0.22 0.02 60);border-radius:2px;padding:34px 34px 26px 62px;
+    box-shadow:0 30px 60px oklch(0 0 0 / .55), 0 2px 0 oklch(1 0 0 / .3) inset;
+    background-image:repeating-linear-gradient(transparent 0 33px,
+      oklch(0.78 0.05 240 / .55) 33px 34px);
+    transform-origin:50% 100%;transition:transform .8s var(--ease),opacity .8s var(--ease)}
+  #paper .sheet::before{content:"";position:absolute;left:40px;top:0;bottom:0;width:1px;
+    background:oklch(0.68 0.16 25 / .5)}
+  #paper .meta{display:flex;justify-content:space-between;font-family:'Geist Mono',monospace;
+    font-size:9.5px;letter-spacing:.14em;color:oklch(0.45 0.03 60);margin-bottom:16px}
+  #paper textarea,#paper input{width:100%;background:none;border:0;outline:none;
+    font-family:'Instrument Serif',Georgia,serif;color:inherit;resize:none}
+  #paper textarea{font-size:20px;line-height:34px;height:170px;display:block}
+  #paper .from{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+  #paper .from span{font-family:'Instrument Serif',serif;font-style:italic;
+    color:oklch(0.45 0.03 60)}
+  #paper input{font-size:18px;line-height:34px;border-bottom:1px solid oklch(0.62 0.04 60 / .5)}
+  #paper .send{margin-top:20px;font-family:'Geist Mono',monospace;font-size:10px;
+    letter-spacing:.18em;background:oklch(0.22 0.02 60);color:oklch(0.96 0.01 92);
+    border:0;border-radius:2px;padding:11px 20px;cursor:pointer}
+  #paper.sent .sheet{transform:translateY(-40px) rotateX(72deg) scale(.9);opacity:0}
+
+  /* ── B. POSTCARD ──────────────────────────────────────────── */
+  #card .pc{position:relative;max-width:760px;aspect-ratio:1.6/1;min-height:330px;
+    background:oklch(0.93 0.02 88);color:oklch(0.24 0.02 60);display:grid;
+    grid-template-columns:1.15fr 1fr;border-radius:3px;overflow:hidden;
+    box-shadow:0 30px 60px oklch(0 0 0 / .55);
+    transition:transform .9s var(--ease),opacity .9s var(--ease)}
+  #card .left{padding:26px 22px;border-right:1px dashed oklch(0.62 0.04 60 / .6)}
+  #card textarea{width:100%;height:100%;background:none;border:0;outline:none;resize:none;
+    font-family:'Instrument Serif',Georgia,serif;font-size:19px;line-height:29px;color:inherit}
+  #card .right{padding:22px 24px;display:flex;flex-direction:column}
+  #card .stamp{align-self:flex-end;width:78px;height:92px;border:1px solid oklch(0.55 0.05 60 / .6);
+    background:oklch(0.90 0.03 88);display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:8px;position:relative}
+  #card .stamp svg{width:58px}
+  #card .postmark{position:absolute;right:96px;top:16px;width:118px;height:118px;
+    opacity:0;transform:rotate(-18deg) scale(1.7);transition:none}
+  #card.sent .postmark{opacity:.72;transform:rotate(-13deg) scale(1);
+    transition:opacity .12s linear,transform .32s cubic-bezier(.2,1.6,.4,1)}
+  #card .addr{margin-top:auto;font-family:'Geist Mono',monospace;font-size:10.5px;
+    letter-spacing:.1em;color:oklch(0.34 0.02 60);line-height:2.1}
+  #card .addr b{font-weight:500}
+  #card .rule{height:1px;background:oklch(0.62 0.04 60 / .55);margin:5px 0}
+  #card .send{margin-top:18px;font-family:'Geist Mono',monospace;font-size:10px;
+    letter-spacing:.18em;background:oklch(0.24 0.02 60);color:oklch(0.95 0.01 92);
+    border:0;border-radius:2px;padding:11px 20px;cursor:pointer}
+  #card.sent .pc{transform:translate(90px,-28px) rotate(4deg);opacity:0;
+    transition-delay:.55s}
+
+  /* ── C. TELETYPE ──────────────────────────────────────────── */
+  #tty .term{max-width:700px;background:oklch(0.10 0.004 260);
+    border:1px solid oklch(0.24 0.01 160);border-radius:4px;padding:20px 22px;
+    font-family:'Geist Mono',monospace;font-size:13px;line-height:1.75;
+    color:oklch(0.86 0.09 155);box-shadow:0 0 60px oklch(0.5 0.12 155 / .07) inset}
+  #tty .hdr{color:oklch(0.52 0.06 155);border-bottom:1px dashed oklch(0.26 0.02 160);
+    padding-bottom:10px;margin-bottom:12px;font-size:11px;letter-spacing:.1em}
+  #tty textarea{width:100%;height:150px;background:none;border:0;outline:none;resize:none;
+    font-family:inherit;font-size:13px;line-height:1.75;color:oklch(0.92 0.10 155);
+    caret-color:oklch(0.86 0.16 150)}
+  #tty .row{display:flex;gap:8px;align-items:center;margin-top:6px}
+  #tty input{flex:1;background:none;border:0;outline:none;font-family:inherit;
+    font-size:13px;color:oklch(0.92 0.10 155)}
+  #tty .send{font-family:inherit;font-size:11px;letter-spacing:.14em;
+    background:oklch(0.24 0.05 155);color:oklch(0.92 0.12 155);
+    border:1px solid oklch(0.38 0.08 155);border-radius:3px;padding:8px 14px;cursor:pointer}
+  #tty .out{white-space:pre-wrap;margin-top:14px;color:oklch(0.70 0.08 155);font-size:12px}
+
+  /* ── D. DESK (reworked) ───────────────────────────────────── */
+  #desk .surface{position:relative;max-width:860px;min-height:470px;border-radius:8px;
+    display:flex;align-items:center;padding:46px 52px;overflow:hidden;
+    /* The tray is drawn in perspective, so the note has to be able to lie down
+       into it. One perspective on the surface puts the note and the tray in the
+       same imaginary camera; desk-fold.js aims perspective-origin at the tray. */
+    perspective:900px;
+    background-color:#33220f;
+    background-image:
+      radial-gradient(120% 100% at 8% -12%, rgba(255,214,150,.16), transparent 55%),
+      radial-gradient(100% 90% at 105% 115%, rgba(0,0,0,.55), transparent 62%),
+      var(--wood);
+    background-size:cover;background-position:center;
+    box-shadow:inset 0 0 130px rgba(0,0,0,.62), 0 24px 60px rgba(0,0,0,.5)}
+  #desk .ring{position:absolute;border-radius:50%;pointer-events:none;
+    border:6px solid oklch(0.44 0.075 58 / .30);filter:blur(1.1px)}
+  #desk .ring.r1{right:74px;top:52px;width:104px;height:100px;transform:rotate(-8deg)}
+  #desk .ring.r2{right:96px;top:74px;width:64px;height:62px;border-width:4px;
+    border-color:oklch(0.44 0.075 58 / .20);filter:blur(1.6px)}
+  #desk .sheet{position:relative;width:min(374px,50%);margin-left:150px;
+    color:oklch(0.24 0.024 58);padding:28px 30px 22px;border-radius:1px;
+    transform:rotate(-1.8deg);
+    /* two shadows: a tight contact one and a wide soft one, which is what sells
+       an object resting on a surface rather than floating over it */
+    box-shadow:1px 2px 2px rgba(0,0,0,.42), 10px 26px 44px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.5);
+    /* Rules and paper tint must be layers of ONE background-image, with an
+       explicit background-color underneath. Declaring `background:` and then
+       `background-image:` wipes the first — the sheet rendered transparent and
+       the desk showed straight through it. */
+    background-color:#efe9dc;
+    background-image:
+      repeating-linear-gradient(transparent 0 31px, rgba(120,150,196,.30) 31px 32px),
+      var(--paper);
+    background-size:auto, cover;
+    transition:transform .9s var(--ease),opacity .9s var(--ease)}
+  /* Ruled paper only works if the writing sits ON the rules. Everything below
+     is locked to RULE = 32px: the header occupies exactly two rules, the
+     textarea's line-height is one rule, and the signature sits on one. */
+  #desk .sheet{--rule:32px}
+  #desk .head{font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+    color:oklch(0.48 0.03 60);display:flex;justify-content:space-between;
+    height:calc(var(--rule) * 2);align-items:flex-end;padding-bottom:9px}
+  #desk .body{padding-left:26px}          /* clears the red margin rule */
+  #desk textarea{width:100%;height:calc(var(--rule) * 5);background:none;border:0;
+    outline:none;resize:none;font-family:'Instrument Serif',Georgia,serif;
+    font-size:19px;line-height:var(--rule);color:inherit;display:block}
+  #desk .sig{display:flex;align-items:baseline;gap:9px;height:var(--rule);
+    font-family:'Instrument Serif',serif;font-style:italic;color:oklch(0.48 0.03 60)}
+  #desk .sig input{flex:1;background:none;border:0;outline:none;
+    font-family:'Instrument Serif',serif;font-style:normal;font-size:17px;
+    line-height:var(--rule);color:oklch(0.24 0.024 58)}
+  /* the red margin rule, as on real ruled paper */
+  #desk .sheet::before{content:"";position:absolute;left:52px;top:0;bottom:0;width:1px;
+    background:oklch(0.62 0.15 25 / .35)}
+
+  /* ── desk objects ─────────────────────────────────────────── */
+
+  /* Objects share one light: highlights up-left, shadows down-right. */
+  #desk .obj{position:absolute;pointer-events:none}
+  #desk .obj svg{width:100%;height:auto;display:block}
+  #desk .can{right:206px;top:30px;width:54px;transform:rotate(3deg);
+    filter:drop-shadow(9px 15px 14px rgba(0,0,0,.6))}
+  #desk .kb{right:24px;bottom:24px;width:282px;transform:rotate(-5deg);
+    filter:drop-shadow(8px 14px 16px rgba(0,0,0,.6))}
+  #desk .mouse{right:36px;bottom:148px;width:48px;transform:rotate(-12deg);
+    filter:drop-shadow(7px 12px 12px rgba(0,0,0,.6))}
+
+  /* a deskmat, which is what makes a keyboard and mouse read as a setup */
+  #desk .mat{position:absolute;right:6px;bottom:6px;width:348px;height:206px;
+    border-radius:9px;background:#191b20;
+    background-image:radial-gradient(120% 100% at 20% 0%, rgba(255,255,255,.05), transparent 60%);
+    box-shadow:0 2px 2px rgba(0,0,0,.5), 6px 14px 26px rgba(0,0,0,.5),
+      inset 0 0 0 2px rgba(255,255,255,.045)}
+  #desk .tray{right:14px;top:14px;width:172px;transform:rotate(2deg);
+    filter:drop-shadow(8px 14px 14px rgba(0,0,0,.62))}
+  /* Same box as .tray, drawn again above the flying note (z 9) so the near wall
+     crosses in front of it and the note reads as IN the tray, not on it. */
+  #desk .trayfront{right:14px;top:14px;width:172px;transform:rotate(2deg);z-index:12}
+  #desk .hp{left:16px;top:26px;width:124px;transform:rotate(-9deg);
+    filter:drop-shadow(8px 14px 14px rgba(0,0,0,.6))}
+  #desk .chips{left:30px;bottom:40px;width:74px;transform:rotate(4deg);
+    filter:drop-shadow(7px 11px 11px rgba(0,0,0,.6))}
+  #desk .biner{left:116px;bottom:34px;width:40px;transform:rotate(16deg);
+    filter:drop-shadow(6px 10px 10px rgba(0,0,0,.6))}
+
+  /* the dart the note becomes */
+  #desk .dart{position:absolute;width:120px;pointer-events:none;opacity:0;z-index:8}
+  #desk .foldrig{position:absolute;z-index:7;perspective:1100px}
+  #desk .foldrig .fh{position:absolute;left:0;width:100%;height:50%;overflow:hidden;
+    backface-visibility:hidden}
+  #desk .foldrig .fh.top{top:0;transform-origin:50% 100%}
+  #desk .foldrig .fh.bot{top:50%}
+  #desk .foldrig .fh > *{position:absolute;left:0;width:100%}
+  #desk .foldrig .fh.top > *{top:0}
+  #desk .foldrig .fh.bot > *{top:-100%}
+  #desk .foldrig .crease{position:absolute;left:0;right:0;top:0;height:100%;
+    background:linear-gradient(180deg, oklch(0 0 0 / .35), transparent 55%);opacity:0}
+  #desk .send{margin-top:14px;font-family:'Geist Mono',monospace;font-size:10px;
+    letter-spacing:.18em;background:oklch(0.22 0.02 60);color:oklch(0.96 0.01 92);
+    border:0;border-radius:2px;padding:11px 20px;cursor:pointer}
+
+  /* ── E. 3D ────────────────────────────────────────────────── */
+  #fly .stage{position:relative;max-width:880px;aspect-ratio:16/9;border-radius:6px;
+    overflow:hidden;background:linear-gradient(180deg, oklch(0.175 0.018 254), var(--bg));
+    border:1px solid var(--line)}
+  #fly canvas{width:100%;height:100%;display:block}
+  #fly .loadingnote{position:absolute;inset:0;display:flex;align-items:center;
+    justify-content:center;font-family:'Geist Mono',monospace;font-size:10px;
+    letter-spacing:.18em;color:var(--muted)}
+  #fly .flyform{max-width:880px;margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  #fly textarea{width:100%;height:88px;resize:none;background:oklch(0.16 0.005 260);
+    border:1px solid var(--line);border-radius:4px;padding:12px 14px;color:var(--ink);
+    font-family:'Instrument Serif',Georgia,serif;font-size:17px;line-height:1.5;outline:none}
+  #fly .row{display:flex;align-items:center;gap:10px}
+  #fly .row span{font-family:'Instrument Serif',serif;font-style:italic;color:var(--muted)}
+  #fly .row input{flex:1;background:oklch(0.16 0.005 260);border:1px solid var(--line);
+    border-radius:4px;padding:9px 12px;color:var(--ink);font-family:'Instrument Serif',serif;
+    font-size:16px;outline:none}
+  #fly .send{align-self:flex-start;font-family:'Geist Mono',monospace;font-size:10px;
+    letter-spacing:.18em;background:var(--gold);color:oklch(0.18 0.02 90);border:0;
+    border-radius:999px;padding:11px 22px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="t">INBOX · DESIGN DEMOS</div>
+  <nav>
+    <button data-go="paper" aria-selected="true">A — PAPER</button>
+    <button data-go="card" aria-selected="false">B — POSTCARD</button>
+    <button data-go="tty" aria-selected="false">C — TELETYPE</button>
+    <button data-go="desk" aria-selected="false">D — DESK</button>
+    <button data-go="fly" aria-selected="false">E — 3D · FOLD &amp; FLY</button>
+  </nav>
+  <div class="t" style="margin-left:auto"><a href="/" style="color:inherit">← BACK TO SITE</a></div>
+</header>
+
+<main>
+
+<!-- A -->
+<section class="demo" id="paper" data-on>
+  <div class="lede"><h2>Write me <em>a note.</em></h2>
+    <p>Goes straight to my inbox. Anonymous is fine.</p></div>
+  <div class="sheet">
+    <div class="meta"><span>TO: DARYL ECHEAZU — HYDE PARK, CHICAGO</span><span class="today"></span></div>
+    <textarea placeholder="Dear Daryl,"></textarea>
+    <div class="from"><span>— from</span><input placeholder="your name, or nothing"></div>
+  </div>
+  <button class="send">SEND</button>
+  <div class="note">A real sheet on a dark page. The only light thing on the whole site.</div>
+  <button class="again">SEND ANOTHER</button>
+</section>
+
+<!-- B -->
+<section class="demo" id="card">
+  <div class="lede"><h2>Send me <em>a postcard.</em></h2>
+    <p>Goes straight to my inbox. Anonymous is fine.</p></div>
+  <div class="pc">
+    <div class="left"><textarea placeholder="Dear Daryl,"></textarea></div>
+    <div class="right">
+      <div class="stamp">
+        <svg viewBox="0 0 120 72" aria-hidden="true">
+          <polygon fill="oklch(0.30 0.02 60 / .22)"
+            points="4,66 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,66"/>
+          <polyline fill="none" stroke="oklch(0.40 0.10 60)" stroke-width="2.6"
+            stroke-linejoin="round" stroke-linecap="round"
+            points="4,66 20,61 31,26 42,14 52,12 60,20 70,40 86,55 116,66"/>
+        </svg>
+      </div>
+      <svg class="postmark" viewBox="0 0 120 120" aria-hidden="true">
+        <defs><path id="pmT" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0"/></defs>
+        <circle cx="60" cy="60" r="45" fill="none" stroke="oklch(0.36 0.10 25)" stroke-width="2.5"/>
+        <circle cx="60" cy="60" r="35" fill="none" stroke="oklch(0.36 0.10 25)" stroke-width="1.2"/>
+        <text font-family="Geist Mono, monospace" font-size="9.5" letter-spacing="2.2"
+          fill="oklch(0.36 0.10 25)"><textPath href="#pmT" startOffset="6%">HYDE PARK · CHICAGO ·</textPath></text>
+        <text x="60" y="58" text-anchor="middle" font-family="Geist Mono, monospace"
+          font-size="12" letter-spacing="1" fill="oklch(0.36 0.10 25)" class="pmdate"></text>
+        <text x="60" y="74" text-anchor="middle" font-family="Geist Mono, monospace"
+          font-size="8" letter-spacing="2.4" fill="oklch(0.36 0.10 25)">RECEIVED</text>
+      </svg>
+      <div class="addr">
+        <b>DARYL ECHEAZU</b><div class="rule"></div>
+        HYDE PARK<div class="rule"></div>
+        CHICAGO, IL<div class="rule"></div>
+      </div>
+    </div>
+  </div>
+  <button class="send">SEND</button>
+  <div class="note">The stamp is the site's mark. Sending drops the postmark, then the card leaves.</div>
+  <button class="again">SEND ANOTHER</button>
+</section>
+
+<!-- C -->
+<section class="demo" id="tty">
+  <div class="lede"><h2>Open <em>a channel.</em></h2>
+    <p>Goes straight to my inbox. Anonymous is fine.</p></div>
+  <div class="term">
+    <div class="hdr">DARYLOS MAIL · COMPOSE · TO: DARYL@ECHEAZU &nbsp;·&nbsp; <span class="today"></span></div>
+    <textarea placeholder="> "></textarea>
+    <div class="row"><span style="color:oklch(0.52 0.06 155)">FROM:</span>
+      <input placeholder="your name, or nothing"></div>
+    <div class="row" style="margin-top:12px"><button class="send">TRANSMIT</button></div>
+    <div class="out"></div>
+  </div>
+  <div class="note">Consistent with the terminal DarylOS already has.</div>
+  <button class="again">SEND ANOTHER</button>
+</section>
+
+<!-- D -->
+<section class="demo" id="desk">
+  <div class="lede"><h2>Leave it <em>on my desk.</em></h2>
+    <p>Goes straight to my inbox. Anonymous is fine.</p></div>
+  <div class="surface">
+    <div class="ring r1"></div><div class="ring r2"></div>
+
+    <!-- his actual desk, not generic dressing -->
+    <div class="mat"></div>
+    <div class="obj tray"></div>
+    <div class="obj trayfront"></div>
+    <div class="obj can"></div>
+    <div class="obj hp"></div>
+    <div class="obj chips"></div>
+    <div class="obj biner"></div>
+    <div class="obj kb"></div>
+    <div class="obj mouse"></div>
+
+    <div class="sheet">
+      <div class="head"><span>TO: DARYL ECHEAZU</span><span class="today"></span></div>
+      <div class="body">
+        <textarea placeholder="Dear Daryl,"></textarea>
+        <div class="sig"><span>— from</span><input placeholder="your name, or nothing"></div>
+      </div>
+    </div>
+  </div>
+  <button class="send">SEND</button>
+  <div class="note">The note goes into the inbox tray — which is what the page is.
+    Throwing it as a paper plane across a desk never made sense.</div>
+  <button class="again">SEND ANOTHER</button>
+</section>
+
+<!-- E -->
+<section class="demo" id="fly">
+  <div class="lede"><h2>Fold it <em>into a plane.</em></h2>
+    <p>Type below — it appears on the paper. Send folds it and throws it over the valley.</p></div>
+  <div class="stage">
+    <canvas id="flyCanvas"></canvas>
+    <div class="loadingnote">loading three.js …</div>
+  </div>
+  <div class="flyform">
+    <textarea placeholder="Dear Daryl,"></textarea>
+    <div class="row"><span>— from</span><input placeholder="your name, or nothing"></div>
+    <button class="send">SEND</button>
+  </div>
+  <div class="note">three.js for the scene, anime.js driving the send timeline.
+    Costs ~670KB of library, loaded only when this tab is opened.</div>
+  <button class="again">SEND ANOTHER</button>
+</section>
+
+</main>
+
+<script>
+(function(){
+  var d = new Date();
+  var months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  var stamp = months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  Array.prototype.forEach.call(document.querySelectorAll(".today"), function(e){
+    e.textContent = stamp;
+  });
+  var pm = document.querySelector(".pmdate");
+  if (pm) pm.textContent = months[d.getMonth()] + " " + d.getDate();
+
+  // tabs
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"), function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(document.querySelectorAll("nav button"), function(x){
+        x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+      Array.prototype.forEach.call(document.querySelectorAll(".demo"), function(s){
+        if (s.id === b.getAttribute("data-go")) s.setAttribute("data-on","");
+        else s.removeAttribute("data-on"); });
+    });
+  });
+
+  // send + reset, per demo
+  Array.prototype.forEach.call(document.querySelectorAll(".demo"), function(sec){
+    var send = sec.querySelector(".send"), again = sec.querySelector(".again");
+    if (send && sec.id !== "desk" && sec.id !== "fly") send.addEventListener("click", function(){
+      if (sec.id === "tty") {
+        var out = sec.querySelector(".out"), lines = [
+          "> opening channel ...",
+          "> 220 daryl.echeazu ready",
+          "> transmitting " + (sec.querySelector("textarea").value.length || 0) + " bytes",
+          "> 250 message accepted",
+          "> channel closed. thanks for writing."
+        ], i = 0;
+        out.textContent = "";
+        (function next(){
+          if (i >= lines.length) { sec.classList.add("sent"); return; }
+          out.textContent += lines[i++] + "\n";
+          setTimeout(next, 340);
+        })();
+      } else {
+        sec.classList.add("sent");
+      }
+      send.disabled = true; send.style.opacity = .4;
+    });
+    if (again) again.addEventListener("click", function(){
+      sec.classList.remove("sent");
+      if (send) { send.disabled = false; send.style.opacity = 1; }
+      var o = sec.querySelector(".out"); if (o) o.textContent = "";
+      Array.prototype.forEach.call(sec.querySelectorAll("textarea,input"), function(f){ f.value=""; });
+      if (sec.id === "fly" && window.__flyReset) window.__flyReset();
+      if (sec.id === "desk" && window.__deskReset) window.__deskReset();
+    });
+  });
+
+  // Lazy-load the 3D tab: three.js is ~670KB, so nobody pays for it unless they
+  // actually open E.
+  var flyLoaded = false;
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"), function(b){
+    b.addEventListener("click", function(){
+      if (b.getAttribute("data-go") === "fly" && !flyLoaded) {
+        flyLoaded = true;
+        var s = document.createElement("script");
+        s.type = "module"; s.src = "inbox-3d.js";
+        document.body.appendChild(s);
+      }
+    });
+  });
+})();
+</script>
+<script type="module">
+  import { applyMaterials, keyboardSVG, mouseSVG, canSVG, traySVG, trayFrontSVG,
+           headphonesSVG, chipsSVG, binerSVG }
+    from "./desk-scene.js";
+  const desk = document.getElementById("desk");
+  applyMaterials(desk);
+  desk.querySelector(".can").innerHTML = canSVG();
+  desk.querySelector(".kb").innerHTML = keyboardSVG();
+  desk.querySelector(".mouse").innerHTML = mouseSVG();
+  desk.querySelector(".tray").innerHTML = traySVG();
+  desk.querySelector(".trayfront").innerHTML = trayFrontSVG();
+  desk.querySelector(".hp").innerHTML = headphonesSVG();
+  desk.querySelector(".chips").innerHTML = chipsSVG();
+  desk.querySelector(".biner").innerHTML = binerSVG();
+</script>
+<script type="module" src="desk-fold.js"></script>
+</body>
+</html>
