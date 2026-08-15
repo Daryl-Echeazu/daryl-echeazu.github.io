@@ -314,6 +314,24 @@ PADS = [
      'inboxPad: mob ? \\"104px 20px 22px\\" : \\"150px 40px 24px\\"'),
 ]
 
+# ── 7. Unfinished sections (--hide) ──────────────────────────────────────────
+# `main` ships the finished site; DarylOS and the Inbox are still being worked
+# on and live on `development` only. Rather than cut them out of the template —
+# which is precompiled, so excising blocks means renumbering bindings — this
+# removes the only two ways in: the nav's tab list, and the arrow-key order.
+# The sections stay in the bundle, unreachable and inert, and a rebuild of
+# `development` restores them by simply not passing the flag.
+#
+# Keyed by the tab id the app uses internally, not the label.
+HIDEABLE = {
+    "live":  ('[\\"live\\", \\"DarylOS\\"], ', ""),
+    "inbox": (', [\\"inbox\\", \\"INBOX\\"]', ""),
+}
+# The arrow-key walk is a separate list and has to agree with the nav, or the
+# hidden pages stay one keypress away.
+KEY_ORDER_FROM = 'const order = [\\"home\\", \\"meanwhile\\", \\"work\\", \\"live\\", \\"inbox\\"];'
+KEY_ORDER_FMT = 'const order = [%s];'
+
 # ── 4. Mobile nav layout ─────────────────────────────────────────────────────
 # The nav is grid-template-columns: 1fr auto 1fr — an empty third column so the
 # tabs sit optically centred. That splits the leftover space evenly, so on a
@@ -529,7 +547,17 @@ def main():
     ap.add_argument("--no-recompress", action="store_true", help="extract byte-identical images")
     ap.add_argument("--card-version", type=int, default=1,
                     help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
+    ap.add_argument("--hide", default="",
+                    help="comma-separated tabs to remove from the nav: %s. "
+                         "main is built with --hide live,inbox; development with none."
+                         % ",".join(sorted(HIDEABLE)))
     args = ap.parse_args()
+
+    hide = [t.strip() for t in args.hide.split(",") if t.strip()]
+    bad = [t for t in hide if t not in HIDEABLE]
+    if bad:
+        sys.exit("ERROR: --hide got unknown tab(s) %s; known: %s"
+                 % (", ".join(bad), ", ".join(sorted(HIDEABLE))))
 
     with open(args.export, encoding="utf-8") as fh:
         html = fh.read()
@@ -668,6 +696,26 @@ def main():
         print("phone nav   : patched")
     else:
         print("phone nav   : SKIPPED — stylesheet anchor not found")
+
+    # ── Hidden sections ──────────────────────────────────────────────────────
+    if hide:
+        for tab in hide:
+            frm, to = HIDEABLE[tab]
+            if frm in html:
+                html = html.replace(frm, to, 1)
+            else:
+                sys.exit("ERROR: --hide %s could not find its nav entry; the "
+                         "export's tabDefs changed and this patch needs updating." % tab)
+        keep = [t for t in ["home", "meanwhile", "work", "live", "inbox"] if t not in hide]
+        if KEY_ORDER_FROM not in html:
+            sys.exit("ERROR: --hide could not find the arrow-key order; hidden "
+                     "tabs would stay reachable by keyboard.")
+        html = html.replace(
+            KEY_ORDER_FROM,
+            KEY_ORDER_FMT % ", ".join('\\"%s\\"' % t for t in keep), 1)
+        print("hidden tabs  : %s (nav + arrow keys)" % ", ".join(hide))
+    else:
+        print("hidden tabs  : none — full site")
 
     # ── Parse bundle sections ────────────────────────────────────────────────
     man_m = section(html, "manifest")
