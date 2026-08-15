@@ -2,6 +2,32 @@
 
 Personal site, built in **Claude Design** and deployed to GitHub Pages.
 
+## Branches
+
+| Branch | What it is | Build command |
+| --- | --- | --- |
+| `main` | What the public sees. Finished work only. | `python build.py "~/Downloads/index (1).html" --out . --hide live,inbox` |
+| `development` | Everything, including work in progress. | `python build.py "~/Downloads/index (1).html" --out .` |
+
+`main` deploys to GitHub Pages; `development` is a working branch and is not
+served. **The build command differs between them** — the `--hide` flag is the
+only thing keeping DarylOS and the Inbox off the live site, so a rebuild on
+`main` that omits it will quietly publish both.
+
+Two things are held back from `main` today:
+
+- **DarylOS** and the **Inbox** — hidden from the nav via `--hide` (see
+  [Hiding unfinished sections](#hiding-unfinished-sections)). The Inbox in
+  particular should stay hidden until `formEndpoint` is set, because until then
+  it reports success and discards the message — see [Known
+  issues](#known-issues-pre-existing-fix-in-claude-design). LinkedIn and Email
+  on the home page still give visitors a way to make contact.
+- **`inbox-demos.html`** and its scripts (`desk-scene.js`, `desk-fold.js`,
+  `inbox-3d.js`) — five candidate Inbox designs, `development` only.
+
+To move finished work across, merge `development` into `main` and then rebuild
+with `--hide` for whatever is still unfinished.
+
 ## How to update the site
 
 Claude Design is the source of truth. Never hand-edit `index.html` — it is
@@ -9,12 +35,8 @@ generated output, and the next export will overwrite whatever you changed.
 
 1. Make your edits in Claude Design.
 2. Download the export (a single self-contained `.html`).
-3. Run the build against that download:
-
-   ```sh
-   python build.py "~/Downloads/index (1).html" --out .
-   ```
-
+3. Run the build against that download — the command for the branch you are on,
+   from the table above.
 4. Commit and push. GitHub Pages redeploys in under a minute.
 
 ## What `build.py` does
@@ -234,6 +256,29 @@ the one highlighted name on Experience and nothing anywhere else. An earlier
 candidate matched the section headings instead, which is why these are verified
 rather than assumed.
 
+### Hiding unfinished sections
+
+`--hide live,inbox` keeps DarylOS and the Inbox off `main`. It does **not** cut
+them out of the bundle — the template is precompiled (`data-dc-tpl`), so
+removing blocks would renumber every binding after them. It removes the only two
+ways in instead:
+
+```js
+const tabDefs = [["meanwhile","ABOUT"], ["work","EXPERIENCE"]];   // nav
+const order   = ["home","meanwhile","work"];                      // arrow keys
+```
+
+Both had to go. The arrow-key walk is a separate list, so patching the nav alone
+would have left the hidden pages one keypress away — verified by pressing
+ArrowRight past the end of the list and confirming neither section appears.
+
+The sections themselves stay in the file, unreachable and inert: a few KB of
+markup that never renders. `goInbox` is defined in the app's bindings but was
+never referenced in the markup, so there was no third entry point to close.
+
+Both patches are asserted, not assumed — if the export's `tabDefs` changes shape
+the build fails loudly rather than silently publishing an unfinished page.
+
 ## The Valley
 
 `valley.js` adds an interactive west-to-east section of Yosemite. The About page
@@ -313,7 +358,8 @@ To remove: delete the file and its line in `build.py`. Nothing else refers to it
 
 ## Known issues (pre-existing, fix in Claude Design)
 
-**The contact form discards every message.** `formEndpoint` is an unset prop, so
+**The contact form discards every message.** This is why the Inbox is hidden on
+`main`. `formEndpoint` is an unset prop, so
 `if (endpoint)` is false and no request is ever made — but `setState({ sent:
 true })` runs unconditionally, so the visitor still sees a success
 confirmation. Even once an endpoint is set, `.catch(() => {})` swallows failures
