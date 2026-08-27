@@ -10,8 +10,8 @@ generated output — edit the site in Claude Design, not here.
 Download the export from Claude Design, then run the command for your branch:
 
 ```sh
-# main — the public site
-python build.py "~/Downloads/index (1).html" --out . --hide live,inbox
+# main — the public site (DarylOS included since Aug 2026)
+python build.py "~/Downloads/index (1).html" --out . --hide inbox
 
 # development — everything, including work in progress
 python build.py "~/Downloads/index (1).html" --out .
@@ -20,8 +20,8 @@ python build.py "~/Downloads/index (1).html" --out .
 Commit and push; Pages redeploys in under a minute.
 
 `main` is what the public sees. `development` is the working branch and is not
-served. **`--hide` is the only thing keeping DarylOS and the Inbox off the live
-site** — rebuild `main` without it and both go public. The Inbox should stay
+served. **`--hide inbox` is the only thing keeping the Inbox off the live
+site** — rebuild `main` without it and it goes public. The Inbox should stay
 hidden until `formEndpoint` is set in Claude Design, because until then it
 reports success and silently discards every message.
 

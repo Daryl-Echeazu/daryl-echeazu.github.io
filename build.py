@@ -272,6 +272,236 @@ EXPERIENCE_CSS = (
     "  }\\n"
 )
 
+# ── 13. DarylOS: house style + resizable windows ─────────────────────────────
+# The OS page shipped as a half-hearted macOS clone: emoji dock, traffic-light
+# buttons, frosted-grey glass (whose backdrop-filters also hit the Chromium
+# zoom missampling bug — see section 3). Reskin to the site's own identity:
+# matte near-black panels, hairline borders, gold accents, Geist Mono chrome,
+# Newsreader window titles, text glyphs. No emoji, no blur.
+#
+# Windows also become resizable from the bottom-right corner. The template is
+# precompiled, so no new {{ bindings }} or handlers can be added; instead the
+# resize rides existing ones:
+#   - the window's whole-surface focus mousedown starts a resize when the
+#     pointer is within 26px of the bottom-right corner
+#   - the app's own onLiveMove/onLiveUp handlers grow resize branches
+#   - the height is smuggled through the existing w.w width binding as
+#     "NNNpx; height: MMMpx" (bindings interpolate into the style string)
+#   - w/h land in liveWins state, so the existing localStorage persistence
+#     picks them up; the restore path learns to copy them back
+# Mouse deltas are divided by the effective zoom (rect.width / offsetWidth)
+# to convert screen px into the pre-zoom units the layout uses.
+#
+# Every FROM was count-verified against the export. The glyph map appears
+# twice (desktop icons + dock) — both become the same text glyphs.
+DARYLOS = [
+    ("menubar surface",
+     "background: oklch(0.15 0.005 260 / 0.5); backdrop-filter: blur(16px);",
+     "background: oklch(0.14 0.005 260 / 0.88); border-bottom: 1px solid oklch(0.35 0.01 260 / 0.5);",
+     1),
+    ("wordmark gold star",
+     "<span style=\\\"font-weight: 500; white-space: nowrap;\\\">✦ DarylOS<\\u002Fspan>",
+     "<span style=\\\"font-weight: 500; white-space: nowrap;\\\"><span style=\\\"color: oklch(0.82 0.13 85);\\\">✦<\\u002Fspan> DarylOS<\\u002Fspan>",
+     1),
+    ("window shell",
+     "background: oklch(0.17 0.005 260 / 0.82); backdrop-filter: blur(20px); border: 1px solid oklch(0.32 0.005 260 / 0.7); border-radius: 10px;",
+     "background: oklch(0.155 0.005 260 / 0.97); border: 1px solid oklch(0.38 0.012 260 / 0.55); border-radius: 8px;",
+     1),
+    ("titlebar surface",
+     "background: oklch(0.24 0.012 260 / 0.6); border-bottom: 1px solid oklch(0.40 0.01 260 / 0.4); cursor: grab;",
+     "background: oklch(0.18 0.008 260 / 0.92); border-bottom: 1px solid oklch(0.78 0.14 78 / 0.25); cursor: grab;",
+     1),
+    # Traffic lights out; in: gold diamond, Newsreader title, x close on the
+    # right that golds on hover.
+    ("titlebar contents",
+     "<span sc-camel-on-click=\\\"{{ w.close }}\\\" style=\\\"width: 12px; height: 12px; border-radius: 50%; background: oklch(0.65 0.18 25); cursor: pointer; flex-shrink: 0;\\\" style-hover=\\\"filter: brightness(1.25);\\\"><\\u002Fspan>\\n              <span style=\\\"width: 12px; height: 12px; border-radius: 50%; background: oklch(0.78 0.15 85); flex-shrink: 0;\\\"><\\u002Fspan>\\n              <span style=\\\"width: 12px; height: 12px; border-radius: 50%; background: oklch(0.70 0.17 145); flex-shrink: 0;\\\"><\\u002Fspan>\\n              <span style=\\\"font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: oklch(0.78 0.008 260); margin-left: 6px;\\\">{{ w.title }}<\\u002Fspan>",
+     "<span style=\\\"width: 7px; height: 7px; background: oklch(0.82 0.13 85); flex-shrink: 0; transform: rotate(45deg);\\\"><\\u002Fspan>\\n              <span style=\\\"font-family: 'Newsreader', Georgia, serif; font-size: 14px; color: oklch(0.90 0.006 260); margin-left: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\\\">{{ w.title }}<\\u002Fspan>\\n              <span sc-camel-on-click=\\\"{{ w.close }}\\\" style=\\\"margin-left: auto; width: 20px; height: 20px; display: grid; place-items: center; font-family: 'Geist Mono', monospace; font-size: 14px; line-height: 1; color: oklch(0.60 0.005 260); cursor: pointer; border-radius: 4px; flex-shrink: 0;\\\" style-hover=\\\"color: oklch(0.82 0.13 85); background: oklch(1 0 0 / 0.07);\\\">×<\\u002Fspan>",
+     1),
+    # Desktop icons: 30px emoji becomes a small hairline file tile holding the
+    # same text glyph the dock uses.
+    ("desktop icon tile",
+     "<span style=\\\"font-size: 30px; filter: drop-shadow(0 2px 5px oklch(0 0 0 / 0.45));\\\">{{ ic.glyph }}<\\u002Fspan>",
+     "<span style=\\\"width: 54px; height: 40px; display: grid; place-items: center; font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: oklch(0.88 0.006 260); background: oklch(0.15 0.005 260 / 0.85); border: 1px solid oklch(0.42 0.012 260 / 0.6); border-radius: 6px; box-shadow: 0 3px 10px oklch(0 0 0 / 0.35);\\\">{{ ic.glyph }}<\\u002Fspan>",
+     1),
+    ("dock surface",
+     "background: oklch(0.15 0.005 260 / 0.6); backdrop-filter: blur(18px); border: 1px solid oklch(0.32 0.005 260 / 0.5); border-radius: 14px; padding: 8px 10px;",
+     "background: oklch(0.14 0.005 260 / 0.92); border: 1px solid oklch(0.40 0.012 260 / 0.55); border-radius: 10px; padding: 7px 9px;",
+     1),
+    # Dock tiles: emoji squares become mono text chips that lift and gold on
+    # hover instead of the macOS bounce-scale.
+    ("dock tile",
+     "style=\\\"width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; cursor: pointer; background: {{ d.bg }}; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);\\\" style-hover=\\\"transform: translateY(-6px) scale(1.12);\\\"",
+     "style=\\\"height: 38px; padding: 0 12px; border-radius: 7px; display: grid; place-items: center; font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: oklch(0.87 0.005 260); cursor: pointer; background: {{ d.bg }}; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.18s ease;\\\" style-hover=\\\"transform: translateY(-3px); color: oklch(0.82 0.13 85);\\\"",
+     1),
+    ("terminal prompt gold",
+     "font-size: 12.5px; color: oklch(0.70 0.17 145);\\\">❯<",
+     "font-size: 12.5px; color: oklch(0.82 0.13 85);\\\">❯<",
+     1),
+    ("glyph maps",
+     "{ tasks: \\\"\U0001F4CB\\\", zeta: \\\"⚡\\\", music: \\\"\U0001F3A7\\\", watching: \\\"\U0001F4FA\\\", photos: \\\"\U0001F3D4️\\\", term: \\\"\U0001F4BB\\\" }",
+     "{ tasks: \\\"QUE\\\", zeta: \\\"ZET\\\", music: \\\"MP3\\\", watching: \\\"EPS\\\", photos: \\\"IMG\\\", term: \\\">_\\\" }",
+     2),
+    ("dock open tint gold",
+     "bg: s.liveWins[id].open ? \\\"oklch(1 0 0 / 0.16)\\\" : \\\"transparent\\\",",
+     "bg: s.liveWins[id].open ? \\\"oklch(0.78 0.14 78 / 0.17)\\\" : \\\"transparent\\\",",
+     1),
+    ("icon label tint gold",
+     "labelBg: s.liveWins[id].open ? \\\"oklch(0.45 0.10 255 / 0.75)\\\" : \\\"transparent\\\",",
+     "labelBg: s.liveWins[id].open ? \\\"oklch(0.35 0.06 78 / 0.8)\\\" : \\\"transparent\\\",",
+     1),
+    # ── resize ──
+    ("width mapping carries height",
+     "w: mob ? \\\"auto\\\" : this.liveWinWidths[id] + \\\"px\\\",",
+     "w: mob ? \\\"auto\\\" : (w.w || this.liveWinWidths[id]) + \\\"px\\\" + (w.h ? \\\"; height: \\\" + w.h + \\\"px\\\" : \\\"\\\"),",
+     1),
+    ("focus starts corner resize",
+     "focus: () => this.focusLiveWin(id),",
+     "focus: (e) => { this.focusLiveWin(id); if (!mob && e && e.currentTarget && e.clientX !== undefined) { const el = e.currentTarget, r = el.getBoundingClientRect(), zz = (r.width / el.offsetWidth) || 1; if (r.right - e.clientX < 26 && r.bottom - e.clientY < 26) { this.liveResize = { id, sx: e.clientX, sy: e.clientY, w0: s.liveWins[id].w || this.liveWinWidths[id], h0: Math.round(r.height / zz), z: zz }; e.preventDefault(); } } },",
+     1),
+    ("move handler resize branch",
+     "this.onLiveMove = (e) => {\\n      if (!this.liveDrag) return;",
+     "this.onLiveMove = (e) => {\\n      if (this.liveResize) { const rz = this.liveResize; const minW = { tasks: 300, zeta: 260, music: 300, watching: 240, photos: 240, term: 320 }[rz.id] || 240; const nw = Math.max(minW, Math.min(760, Math.round(rz.w0 + (e.clientX - rz.sx) / rz.z))); const nh = Math.max(120, Math.min(680, Math.round(rz.h0 + (e.clientY - rz.sy) / rz.z))); this.setState(s => ({ liveWins: { ...s.liveWins, [rz.id]: { ...s.liveWins[rz.id], w: nw, h: nh } } })); return; }\\n      if (!this.liveDrag) return;",
+     1),
+    ("up handler persists resize",
+     "this.onLiveUp = () => {\\n      if (this.liveDrag) { try { localStorage.setItem(\\\"darylos-wins\\\", JSON.stringify(this.state.liveWins)); } catch (e) {} }\\n      this.liveDrag = null;\\n    };",
+     "this.onLiveUp = () => {\\n      if (this.liveDrag || this.liveResize) { try { localStorage.setItem(\\\"darylos-wins\\\", JSON.stringify(this.state.liveWins)); } catch (e) {} }\\n      this.liveDrag = null;\\n      this.liveResize = null;\\n    };",
+     1),
+    ("restore copies size",
+     "Object.keys(liveWins).forEach(id => { if (savedWins[id]) liveWins[id] = { ...liveWins[id], x: savedWins[id].x, y: savedWins[id].y }; });",
+     "Object.keys(liveWins).forEach(id => { if (savedWins[id]) liveWins[id] = { ...liveWins[id], x: savedWins[id].x, y: savedWins[id].y, w: savedWins[id].w, h: savedWins[id].h }; });",
+     1),
+    # ── queue.app: hand-editable tasks.json instead of TickTick ──
+    # The TickTick route needed a bearer token in the page (public to anyone
+    # who views source) and the owner declined it. The window now reads
+    # /tasks.json — each key a list (counted) or a plain number — and shows
+    # zeros if the file is missing or malformed. The empty ticktickToken prop
+    # becomes fully dead.
+    ("queue.app reads tasks.json",
+     "loadTasks() {\\n"
+     "    const token = this.props.ticktickToken || \\\"\\\";\\n"
+     "    if (!token) { this.setState({ tasks: { open: 14, today: 5, overdue: 3 } }); return; }\\n"
+     "    fetch(\\\"https://api.ticktick.com/open/v1/project/inbox/data\\\", { headers: { Authorization: \\\"Bearer \\\" + token } })\\n"
+     "      .then(r => r.json())\\n"
+     "      .then(d => {\\n"
+     "        const tasks = (d && d.tasks) || [];\\n"
+     "        const now = new Date(); now.setHours(0, 0, 0, 0);\\n"
+     "        const end = new Date(now); end.setDate(end.getDate() + 1);\\n"
+     "        let today = 0, overdue = 0;\\n"
+     "        tasks.forEach(t => {\\n"
+     "          if (!t.dueDate) return;\\n"
+     "          const due = new Date(t.dueDate);\\n"
+     "          if (due < now) overdue++;\\n"
+     "          else if (due < end) today++;\\n"
+     "        });\\n"
+     "        this.setState({ tasks: { open: tasks.length, today, overdue } });\\n"
+     "      })\\n"
+     "      .catch(() => this.setState({ tasks: { open: 14, today: 5, overdue: 3 } }));\\n"
+     "  }",
+     "loadTasks() {\\n"
+     "    fetch(\\\"tasks.json\\\", { cache: \\\"no-store\\\" })\\n"
+     "      .then(r => { if (!r.ok) throw new Error(\\\"http \\\" + r.status); return r.json(); })\\n"
+     "      .then(d => {\\n"
+     "        const n = k => Array.isArray(d && d[k]) ? d[k].length : (Number(d && d[k]) || 0);\\n"
+     "        this.setState({ tasks: { open: n(\\\"open\\\"), today: n(\\\"today\\\"), overdue: n(\\\"overdue\\\") } });\\n"
+     "      })\\n"
+     "      .catch(() => this.setState({ tasks: { open: 0, today: 0, overdue: 0 } }));\\n"
+     "  }",
+     1),
+    # ── terminal: history, `open <app>`, more commands ──
+    ("terminal history + open",
+     "onTermKey = (e) => {\\n"
+     "    if (e.key !== \\\"Enter\\\") return;\\n"
+     "    const raw = this.state.termInput.trim();\\n"
+     "    const cmd = raw.toLowerCase().split(\\\" \\\")[0];\\n"
+     "    if (!raw) return;\\n"
+     "    if (cmd === \\\"clear\\\") { this.setState({ termLines: [], termInput: \\\"\\\" }); return; }\\n"
+     "    const out = this.termCommands[cmd] || (\\\"command not found: \\\" + cmd + \\\" — try `help`\\\");\\n"
+     "    this.setState(s => ({ termLines: [...s.termLines.slice(-14), \\\"❯ \\\" + raw, out], termInput: \\\"\\\" }));\\n"
+     "  };",
+     "onTermKey = (e) => {\\n"
+     "    const h = this.termHist || [];\\n"
+     "    if (e.key === \\\"ArrowUp\\\") { if (!h.length) return; this.termHistIdx = this.termHistIdx === undefined ? h.length - 1 : Math.max(0, this.termHistIdx - 1); this.setState({ termInput: h[this.termHistIdx] }); e.preventDefault(); return; }\\n"
+     "    if (e.key === \\\"ArrowDown\\\") { if (this.termHistIdx === undefined) return; this.termHistIdx += 1; if (this.termHistIdx >= h.length) { this.termHistIdx = undefined; this.setState({ termInput: \\\"\\\" }); } else { this.setState({ termInput: h[this.termHistIdx] }); } e.preventDefault(); return; }\\n"
+     "    if (e.key !== \\\"Enter\\\") return;\\n"
+     "    const raw = this.state.termInput.trim();\\n"
+     "    const cmd = raw.toLowerCase().split(\\\" \\\")[0];\\n"
+     "    if (!raw) return;\\n"
+     "    this.termHist = [...h, raw].slice(-30);\\n"
+     "    this.termHistIdx = undefined;\\n"
+     "    if (cmd === \\\"clear\\\") { this.setState({ termLines: [], termInput: \\\"\\\" }); return; }\\n"
+     "    if (cmd === \\\"open\\\") {\\n"
+     "      const arg = (raw.toLowerCase().split(\\\" \\\")[1] || \\\"\\\").split(\\\".\\\")[0];\\n"
+     "      const alias = { queue: \\\"tasks\\\", tasks: \\\"tasks\\\", zetamac: \\\"zeta\\\", zeta: \\\"zeta\\\", music: \\\"music\\\", \\\"on-repeat\\\": \\\"music\\\", watching: \\\"watching\\\", eps: \\\"watching\\\", photos: \\\"photos\\\", yosemite: \\\"photos\\\", img: \\\"photos\\\", terminal: \\\"term\\\", term: \\\"term\\\" };\\n"
+     "      const id = alias[arg];\\n"
+     "      const out = id ? \\\"opening \\\" + this.liveWinTitles[id] + \\\" …\\\" : \\\"usage: open <app> — queue · zetamac · music · watching · photos\\\";\\n"
+     "      if (id) this.openLiveWin(id);\\n"
+     "      this.setState(s => ({ termLines: [...s.termLines.slice(-14), \\\"❯ \\\" + raw, out], termInput: \\\"\\\" }));\\n"
+     "      return;\\n"
+     "    }\\n"
+     "    const out = this.termCommands[cmd] || (\\\"command not found: \\\" + cmd + \\\" — try `help`\\\");\\n"
+     "    this.setState(s => ({ termLines: [...s.termLines.slice(-14), \\\"❯ \\\" + raw, out], termInput: \\\"\\\" }));\\n"
+     "  };",
+     1),
+    ("help mentions open",
+     "help: \\\"commands: whoami · work · anime · shelf · zetamac · music · hike · clear\\\",",
+     "help: \\\"commands: whoami · work · anime · shelf · zetamac · music · hike · open <app> · clear — plus the classics\\\",",
+     1),
+    # Seen in the 390px headless screenshots: the zetamac CTA was the last
+    # white macOS-ish element, and the phone window stack needs more bottom
+    # room now that the dock is a single row of text chips.
+    ("zeta button gold",
+     "style=\\\"margin-top: 14px; background: oklch(0.94 0.005 260); color: oklch(0.13 0.005 260); border: none; border-radius: 8px; padding: 10px 22px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.06em; cursor: pointer;\\\" style-hover=\\\"background: oklch(1 0 0);\\\"",
+     "style=\\\"margin-top: 14px; background: linear-gradient(105deg, oklch(0.78 0.14 78), oklch(0.94 0.11 95) 50%, oklch(0.82 0.13 85)); color: oklch(0.18 0.02 78); border: none; border-radius: 8px; padding: 10px 22px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.06em; cursor: pointer;\\\" style-hover=\\\"filter: brightness(1.07);\\\"",
+     1),
+    ("phone bottom pad clears dock",
+     "livePad: mob ? \\\"100px 0 110px\\\" : \\\"0\\\",",
+     "livePad: mob ? \\\"100px 0 128px\\\" : \\\"0\\\",",
+     1),
+    ("classic commands",
+     "sudo: \\\"nice try.\\\"",
+     "sudo: \\\"nice try.\\\",\\n"
+     "    ls: \\\"queue.app  zetamac.app  on-repeat.mp3  watching.txt  yosemite.png\\\",\\n"
+     "    pwd: \\\"/users/daryl/os\\\",\\n"
+     "    uname: \\\"DarylOS 1.0 (gold) — handcrafted, no dependencies\\\",\\n"
+     "    vim: \\\"you live here now. :q! will not save you.\\\",\\n"
+     "    touch: \\\"grass touched. streak intact.\\\"",
+     1),
+]
+
+# The CSS half of the resize: the corner affordance, and content scroll for
+# windows the user has given a fixed height. The max-height percentage only
+# resolves once the resize code sets a height — against height: auto it
+# computes away harmlessly. Phones stack windows and never resize.
+DARYLOS_CSS = (
+    "\\n  /* [build.py] DarylOS: resize affordance + content scroll for\\n"
+    "     fixed-height windows. See build.py section 13. */\\n"
+    "  div[style*='winPop']::after {\\n"
+    "    content: '';\\n"
+    "    position: absolute;\\n"
+    "    right: 4px;\\n"
+    "    bottom: 4px;\\n"
+    "    width: 11px;\\n"
+    "    height: 11px;\\n"
+    "    border-right: 2px solid oklch(0.78 0.14 78 / 0.55);\\n"
+    "    border-bottom: 2px solid oklch(0.78 0.14 78 / 0.55);\\n"
+    "    border-radius: 0 0 5px 0;\\n"
+    "    cursor: nwse-resize;\\n"
+    "  }\\n"
+    "  div[style*='winPop'] > div:last-child {\\n"
+    "    overflow-y: auto;\\n"
+    "    max-height: calc(100% - 41px);\\n"
+    "    box-sizing: border-box;\\n"
+    "  }\\n"
+    "  @media (max-width: 760px) {\\n"
+    "    div[style*='winPop']::after { display: none; }\\n"
+    "    /* Six text chips run wider than six emoji tiles did; keep the dock\\n"
+    "       inside the phone viewport. The z-index is the dock's only stable\\n"
+    "       inline hook, same trick as the nav. */\\n"
+    "    div[style*='z-index: 400'] { max-width: calc(100vw - 8px); gap: 4px !important; justify-content: center; padding: 6px 7px !important; }\\n"
+    "    div[style*='z-index: 400'] > div { height: 30px !important; padding: 0 7px !important; font-size: 9.5px !important; }\\n"
+    "  }\\n"
+)
+
 # ── 10. Accessibility: language attribute ────────────────────────────────────
 # Neither <html> carried a lang attribute. Screen readers use it to pick a
 # pronunciation dictionary, so without it an English page may be read with the
@@ -476,6 +706,7 @@ NAV_CSS = (
     VALLEY_CSS +
     EXPERIENCE_CSS +
     FROST_CSS +
+    DARYLOS_CSS +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"
@@ -746,6 +977,22 @@ def main():
         print("about snap   : native off, about-snap.js drives it")
     else:
         print("about snap   : SKIPPED — scroll-snap-type not found")
+
+    # ── DarylOS: house style + resizable windows ─────────────────────────────
+    dos_done = dos_already = 0
+    for label, frm, to, want in DARYLOS:
+        n = html.count(frm)
+        if n == want:
+            html = html.replace(frm, to)
+            dos_done += 1
+        elif n == 0 and to in html:
+            dos_already += 1
+        else:
+            sys.exit("ERROR: darylos patch %r matched %d (want %d)"
+                     % (label, n, want))
+    print("darylos      : %d patched%s"
+          % (dos_done,
+             ", %d already" % dos_already if dos_already else ""))
 
     # ── Book spine fitting ───────────────────────────────────────────────────
     if SPINE_TO in html:

@@ -1,0 +1,6 @@
+{
+  "_readme": "DarylOS queue.app reads this. Each key is a list (it counts the items) or a plain number. Edit by hand, commit, push.",
+  "open": ["ship DarylOS", "half dome permits", "touch grass"],
+  "today": ["ship DarylOS"],
+  "overdue": []
+}
