@@ -27,7 +27,16 @@
   var INK = "oklch(0.94 0.005 260)";
   var GOLD = "oklch(0.86 0.13 85)";   // the site's accent, as on the headline word
   var TIMEOUT = 9000;      // absolute ceiling, whatever happens
-  var MIN_SHOW = 900;      // let the mark finish drawing; see README on the cost
+  // Let the mark finish drawing on the first view. On repeat views in the
+  // same session the app mounts from cache long before 900ms, so holding the
+  // cover is pure added latency; 250ms is just enough that its exit reads as
+  // a beat rather than a flicker.
+  var seen = false;
+  try {
+    seen = !!sessionStorage.getItem("__booted");
+    sessionStorage.setItem("__booted", "1");
+  } catch (e) { /* storage blocked: treat as first view */ }
+  var MIN_SHOW = seen ? 250 : 900;
 
   var start = Date.now();
   var el = null, styleEl = null, done = false;

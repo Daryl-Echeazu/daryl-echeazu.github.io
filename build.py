@@ -17,7 +17,8 @@ assets. See README.md for the full list and the measurements behind each one.
   2. ASSET EXTRACTION
      Every manifest asset is decoded (and gunzipped) to a real file under
      assets/, and the manifest is rewritten to hold URLs instead of base64.
-     JPEGs are recompressed. index.html drops from ~8.7 MB to ~120 KB.
+     JPEGs are downscaled to what the layout can actually use (--max-edge,
+     hero exempt) and recompressed. index.html drops from ~8.7 MB to ~120 KB.
 
 All changes are idempotent, so re-running on an already-built file is safe.
 
@@ -185,20 +186,38 @@ EXPERIENCE_CSS = (
     "\\n  /* [build.py] Experience: the selected company in the site's gold, the\\n"
     "     same treatment as the rotating headline word and the scene quotes, so\\n"
     "     the page belongs to the rest of the site instead of reading as flat\\n"
-    "     grey. The padding-bottom / negative margin-bottom pair is required:\\n"
-    "     background-clip: text paints only inside the padding box, and without\\n"
-    "     it the descender on 'Google' is sheared off.\\n"
+    "     grey.\\n"
     "\\n"
-    "     The selector was validated against every tab: it resolves to exactly\\n"
-    "     the one highlighted name on Experience and nothing anywhere else. */\\n"
-    "  [style*='clamp(38px, 4.6vw, 58px)']:not([style*='oklch(0.36']) {\\n"
+    "     A background-image swap cannot transition, so the gold used to snap\\n"
+    "     in. Instead every name carries the gradient at all times, hidden\\n"
+    "     under an opaque currentColor text fill; selecting a row only fades\\n"
+    "     the fill to transparent, and fill-color is animatable. The fade\\n"
+    "     shares the 0.45s curve of the inline color/transform transition, so\\n"
+    "     the gold eases in together with the step-right. The transition list\\n"
+    "     needs !important to widen the inline one, and therefore restates\\n"
+    "     the inline color/transform entries verbatim.\\n"
+    "\\n"
+    "     The padding-bottom / negative margin-bottom pair is required:\\n"
+    "     background-clip: text paints only inside the padding box, and\\n"
+    "     without it the descender on 'Google' is sheared off mid-fade.\\n"
+    "\\n"
+    "     The selector was validated against every tab: it hits the six\\n"
+    "     company names on Experience and nothing anywhere else. */\\n"
+    "  [style*='clamp(38px, 4.6vw, 58px)'] {\\n"
     "    background: linear-gradient(105deg, oklch(0.78 0.14 78),\\n"
     "      oklch(0.94 0.11 95) 50%, oklch(0.82 0.13 85));\\n"
     "    -webkit-background-clip: text;\\n"
     "    background-clip: text;\\n"
-    "    -webkit-text-fill-color: transparent;\\n"
+    "    -webkit-text-fill-color: currentColor;\\n"
     "    padding-bottom: 0.34em;\\n"
     "    margin-bottom: -0.34em;\\n"
+    "    transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1),\\n"
+    "      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),\\n"
+    "      -webkit-text-fill-color 0.45s cubic-bezier(0.22, 1, 0.36, 1)\\n"
+    "      !important;\\n"
+    "  }\\n"
+    "  [style*='clamp(38px, 4.6vw, 58px)']:not([style*='oklch(0.36']) {\\n"
+    "    -webkit-text-fill-color: transparent;\\n"
     "  }\\n"
 )
 
@@ -217,8 +236,50 @@ LANG = [
     ('<html lang=\\"en\\"><head>\\n<meta charset=\\"utf-8\\">',
      '<html lang=\\"en\\"><head>\\n<meta charset=\\"utf-8\\">'
      '\\n<link rel=\\"icon\\" type=\\"image/png\\" href=\\"favicon.png\\">'
-     '\\n<link rel=\\"apple-touch-icon\\" href=\\"favicon.png\\">'),
+     '\\n<link rel=\\"apple-touch-icon\\" href=\\"favicon.png\\">'
+     # theme-color has the same one-way problem in reverse: the outer head's
+     # copy dies with the swap, so the mobile address-bar tint reverted at boot.
+     '\n<meta name=\\"theme-color\\" content=\\"#17181c\\">'),
 ]
+
+# ── 10b. Drop the export's emoji favicon ───────────────────────────────────────
+# The template's helmet carries its own <link rel="icon"> — a data: SVG of the
+# mountain emoji — declared AFTER the favicon.png links injected above, so
+# browsers that honour the last icon show the emoji instead of the committed
+# "DE on gold" favicon. (That SVG is also malformed: the export writes
+# sc-camel-view-box where viewBox should be.) Matched by regex because the
+# data URI is regenerated with every export.
+EMOJI_ICON_RE = r'(?:\\n)?<link rel=\\"icon\\" href=\\"data:image/svg\+xml[^>]*?>'
+
+# ── 13. Noscript: real content instead of an apology ─────────────────────────────
+# Crawlers and readers without JavaScript saw only "This page requires
+# JavaScript to display." Give them the actual page in one card: the name and
+# the site's own line. (There are no external links to list — contact goes
+# through the Inbox.)
+NOSCRIPT_FROM = (
+    '<div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 '
+    '-apple-system,BlinkMacSystemFont,sans-serif;color:#999;'
+    'background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;'
+    'box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">\n'
+    '      This page requires JavaScript to display.\n'
+    '    </div>'
+)
+NOSCRIPT_TO = (
+    '<div style="position:fixed;inset:0;display:flex;align-items:center;'
+    'justify-content:center;background:#17181c;color:#f0ede6;'
+    "font-family:Georgia,'Times New Roman',serif;text-align:center;"
+    'padding:24px;z-index:10001;">\n'
+    '      <div style="max-width:34em;">\n'
+    '        <h1 style="font-size:2em;font-weight:normal;letter-spacing:0.02em;">'
+    'Daryl Echeazu</h1>\n'
+    '        <p style="margin-top:0.8em;font-size:1.05em;line-height:1.6;color:#c7c4bc;">'
+    'Mostly building, occasionally touching grass. CS + Math at UChicago. '
+    'ML at Apple; Google Cloud next.</p>\n'
+    '        <p style="margin-top:1.6em;font-size:0.8em;letter-spacing:0.08em;color:#8b8880;">'
+    'THE FULL SITE NEEDS JAVASCRIPT</p>\n'
+    '      </div>\n'
+    '    </div>'
+)
 
 # ── 9. Rotating headline word: quicker cycle ─────────────────────────────────
 # The word changed every 7s with a 0.7s crossfade. Down to 4.5s with a 0.5s
@@ -245,12 +306,12 @@ ROTATION = [
 #
 # og:image must be an absolute URL. social-preview.jpg lives at the repo root
 # rather than under assets/, because the build wipes and rebuilds assets/.
-SITE_URL = "https://daryl-echeazu.github.io"
+SITE_URL = "https://darylecheazu.me"
 SOCIAL_IMAGE = "social-preview.jpg"
 SOCIAL_MARK = "<!-- [build.py] link preview -->"
 SOCIAL_TITLE = "Daryl Echeazu"
-SOCIAL_DESC = ("Computer Science and Math student at the University of Chicago. "
-               "Projects, experience, and what I'm reading.")
+SOCIAL_DESC = ("Mostly building, occasionally touching grass. "
+               "CS + Math at UChicago. ML at Apple; Google Cloud next.")
 SOCIAL_ALT = "Daryl Echeazu's site: El Capitan, Yosemite, with the site title over it."
 
 
@@ -277,6 +338,10 @@ def social_block(version):
         '  <meta name="twitter:description" content="%s">' % SOCIAL_DESC,
         '  <meta name="twitter:image" content="%s">' % img,
         '  <meta name="theme-color" content="#17181c">',
+        # The template carries its own viewport, but it only takes effect after
+        # the runtime swaps documentElement in. Without one here, phones lay
+        # out the pre-swap document (the loading screen) at the default 980px.
+        '  <meta name="viewport" content="width=device-width, initial-scale=1">',
         '  <link rel="icon" type="image/png" href="favicon.png">',
         '  <link rel="apple-touch-icon" href="favicon.png">',
     ])
@@ -524,9 +589,12 @@ def safe_name(name):
     return re.sub(r"[^A-Za-z0-9._-]", "_", name) or "asset"
 
 
-def recompress_jpeg(raw, quality):
-    """Re-encode a JPEG smaller without resizing. Returns raw unchanged if it
-    fails or if the result is not actually smaller."""
+def recompress_jpeg(raw, quality, max_edge=None):
+    """Re-encode a JPEG smaller. If max_edge is set and the long edge exceeds
+    it, downscale first: the layout is a 1280px frame zoomed at most 1.35x, so
+    no non-hero photo ever renders anywhere near its native 2000px+, and the
+    intrinsic size was pure payload. Returns raw unchanged on failure or if
+    the untouched original is already smaller."""
     try:
         from PIL import Image
     except ImportError:
@@ -536,13 +604,20 @@ def recompress_jpeg(raw, quality):
         im.load()
         if im.mode not in ("RGB", "L"):
             im = im.convert("RGB")
+        resized = None
+        if max_edge and max(im.size) > max_edge:
+            before_px = "%dx%d" % im.size
+            im.thumbnail((max_edge, max_edge), Image.LANCZOS)
+            resized = "%s -> %dx%d" % (before_px, im.size[0], im.size[1])
         out = io.BytesIO()
         # progressive renders top-down on slow links; optimize runs a better
         # Huffman pass; EXIF/thumbnails are dropped by not passing them through.
         im.save(out, "JPEG", quality=quality, optimize=True, progressive=True)
         new = out.getvalue()
-        if len(new) < len(raw):
-            return new, None
+        # A resized image is kept even if it somehow encoded larger; matching
+        # intrinsic size to display size is the point of the exercise.
+        if resized or len(new) < len(raw):
+            return new, resized
         return raw, "already smaller"
     except Exception as exc:
         return raw, "recompress failed: %s" % exc
@@ -556,6 +631,12 @@ def main():
     ap.add_argument("--assets", default="assets", help="asset subdirectory name")
     ap.add_argument("--quality", type=int, default=85, help="JPEG quality (default: 85)")
     ap.add_argument("--no-recompress", action="store_true", help="extract byte-identical images")
+    ap.add_argument("--max-edge", type=int, default=1600,
+                    help="downscale JPEGs (except the hero) so their long edge is "
+                         "at most this many pixels (default: 1600; 0 disables). "
+                         "1600 covers the widest non-hero slot (the Valley's "
+                         "~580 CSS px photo column) at 2x DPR with the 1.35 "
+                         "zoom on top.")
     ap.add_argument("--card-version", type=int, default=1,
                     help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
     ap.add_argument("--hide", default="",
@@ -659,6 +740,19 @@ def main():
             print("lang attr    : SKIPPED — an <html> tag did not match")
     print("lang attr    : %d of %d html tags tagged" % (ln, len(LANG)))
 
+    # ── Emoji favicon ────────────────────────────────────────────────────────
+    html, en = re.subn(EMOJI_ICON_RE, "", html, count=1)
+    print("emoji icon   : removed" if en else "emoji icon   : none present")
+
+    # ── Noscript ─────────────────────────────────────────────────────────────
+    if NOSCRIPT_TO in html:
+        print("noscript     : already patched")
+    elif NOSCRIPT_FROM in html:
+        html = html.replace(NOSCRIPT_FROM, NOSCRIPT_TO, 1)
+        print("noscript     : real content added")
+    else:
+        print("noscript     : SKIPPED — stock notice not found")
+
     # ── Rotating headline word ───────────────────────────────────────────────
     rn = 0
     for frm, to in ROTATION:
@@ -751,6 +845,13 @@ def main():
     tmpl_m = section(html, "template")
     template = tmpl_m.group(1)
 
+    # The hero photograph fills the frame edge to edge and is the one image
+    # worth its native resolution; everything else renders in a column or tile
+    # where --max-edge leaves ample hi-dpi headroom. The template's own
+    # og:image (authored in Claude Design) points at the hero, so use that.
+    hm = re.search(r'og:image[^>]*?assets/([A-Za-z0-9._-]+' + chr(92) + '.jpe?g)', template)
+    hero_name = hm.group(1) if hm else None
+
     pages = json.loads(section(html, "page_order").group(1))
     if pages:
         sys.exit("ERROR: nested page bundles present (%d); extraction not supported." % len(pages))
@@ -780,13 +881,8 @@ def main():
         before = len(raw)
 
         mime = entry["mime"]
-        if mime == "image/jpeg" and not args.no_recompress:
-            raw, why = recompress_jpeg(raw, args.quality)
-            if why:
-                notes.append("%s: %s" % (uuid[:8], why))
-        saved_bytes += before - len(raw)
-        total_raw += len(raw)
-
+        # The filename is decided before recompression so the hero can be
+        # exempted from downscaling by name.
         name = uuid2name.get(uuid) or (uuid + EXT_BY_MIME.get(mime, ".bin"))
         name = safe_name(name)
         stem, ext = os.path.splitext(name)
@@ -795,6 +891,14 @@ def main():
             name = "%s-%d%s" % (stem, n, ext)
             n += 1
         used.add(name)
+
+        if mime == "image/jpeg" and not args.no_recompress:
+            cap = None if name == hero_name else (args.max_edge or None)
+            raw, why = recompress_jpeg(raw, args.quality, cap)
+            if why:
+                notes.append("%s: %s" % (name, why))
+        saved_bytes += before - len(raw)
+        total_raw += len(raw)
 
         with open(os.path.join(assetdir, name), "wb") as fh:
             fh.write(raw)
