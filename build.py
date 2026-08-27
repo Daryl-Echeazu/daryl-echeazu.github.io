@@ -446,6 +446,17 @@ DARYLOS = [
      "help: \\\"commands: whoami · work · anime · shelf · zetamac · music · hike · clear\\\",",
      "help: \\\"commands: whoami · work · anime · shelf · zetamac · music · hike · open <app> · clear — plus the classics\\\",",
      1),
+    # Seen in the 390px headless screenshots: the zetamac CTA was the last
+    # white macOS-ish element, and the phone window stack needs more bottom
+    # room now that the dock is a single row of text chips.
+    ("zeta button gold",
+     "style=\\\"margin-top: 14px; background: oklch(0.94 0.005 260); color: oklch(0.13 0.005 260); border: none; border-radius: 8px; padding: 10px 22px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.06em; cursor: pointer;\\\" style-hover=\\\"background: oklch(1 0 0);\\\"",
+     "style=\\\"margin-top: 14px; background: linear-gradient(105deg, oklch(0.78 0.14 78), oklch(0.94 0.11 95) 50%, oklch(0.82 0.13 85)); color: oklch(0.18 0.02 78); border: none; border-radius: 8px; padding: 10px 22px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.06em; cursor: pointer;\\\" style-hover=\\\"filter: brightness(1.07);\\\"",
+     1),
+    ("phone bottom pad clears dock",
+     "livePad: mob ? \\\"100px 0 110px\\\" : \\\"0\\\",",
+     "livePad: mob ? \\\"100px 0 128px\\\" : \\\"0\\\",",
+     1),
     ("classic commands",
      "sudo: \\\"nice try.\\\"",
      "sudo: \\\"nice try.\\\",\\n"
@@ -486,8 +497,8 @@ DARYLOS_CSS = (
     "    /* Six text chips run wider than six emoji tiles did; keep the dock\\n"
     "       inside the phone viewport. The z-index is the dock's only stable\\n"
     "       inline hook, same trick as the nav. */\\n"
-    "    div[style*='z-index: 400'] { max-width: calc(100vw - 12px); flex-wrap: wrap; justify-content: center; }\\n"
-    "    div[style*='z-index: 400'] > div { height: 32px !important; padding: 0 8px !important; font-size: 10px !important; }\\n"
+    "    div[style*='z-index: 400'] { max-width: calc(100vw - 8px); gap: 4px !important; justify-content: center; padding: 6px 7px !important; }\\n"
+    "    div[style*='z-index: 400'] > div { height: 30px !important; padding: 0 7px !important; font-size: 9.5px !important; }\\n"
     "  }\\n"
 )
 
