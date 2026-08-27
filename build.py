@@ -83,19 +83,21 @@ RUNTIME_TO = (
     "      try {"
 )
 
-# ── 3. No nav blur on the home screen ────────────────────────────────────────
-# The nav already dims its own background less on home (navBg alpha 0.18 vs
-# 0.55) but still applied backdrop-filter: blur(12px) everywhere, which smeared
-# a frosted band across the top of the hero photo. Drop it on home and keep it
-# on the other tabs, where content genuinely scrolls under the bar and the blur
-# is doing legibility work. Text stays readable on home via navBg plus the
-# nav's existing text-shadow.
+# ── 3. No nav blur, anywhere ─────────────────────────────────────────────────
+# The nav applied backdrop-filter: blur(12px) everywhere. On home it smeared a
+# frosted band across the hero photo; on the other tabs it hits a Chromium
+# compositor bug: the whole app sits in a wrapper scaled with zoom (--z,
+# 1-1.35x by viewport), and backdrop-filter under zoom missamples the
+# backdrop, so content scrolling beneath the bar smears and jitters whenever
+# zoom != 1. Drop the blur everywhere and let the bar's own tint do the
+# legibility work instead (alpha bump below). Text stays readable via navBg
+# plus the nav's existing text-shadow.
 #
 # This edits the value of an EXISTING binding rather than adding a new one:
 # the template is precompiled (data-dc-tpl indices), so a brand new {{ token }}
 # would not resolve.
 BLUR_FROM = 'navBlur: \\"blur(12px)\\",'
-BLUR_TO = 'navBlur: s.tab === \\"home\\" ? \\"none\\" : \\"blur(12px)\\",'
+BLUR_TO = 'navBlur: \\"none\\",'
 
 # Without the blur, the flat translucent navBg left a hard horizontal edge
 # across the hero photo where the bar ended. Fade it out instead: full strength
@@ -106,6 +108,13 @@ NAVBG_FROM = 'navBg: s.tab === \\"home\\" ? \\"oklch(0.13 0.005 260 / 0.18)\\"'
 NAVBG_TO = ('navBg: s.tab === \\"home\\" ? \\"linear-gradient(to bottom, '
             'oklch(0.13 0.005 260 / 0.5) 0%, oklch(0.13 0.005 260 / 0.38) 45%, '
             'oklch(0.13 0.005 260 / 0) 100%)\\"')
+
+# With the blur gone the non-home bar's 0.55 tint would let sharp text ghost
+# through as it scrolls under. 0.9 keeps the translucent look — the page
+# behind is the same flat dark, so at rest the bar still reads as invisible —
+# while scrolled content dims enough that the nav text stays clean.
+NAVBG2_FROM = '\\"oklch(0.13 0.005 260 / 0.55)\\"'
+NAVBG2_TO = '\\"oklch(0.13 0.005 260 / 0.9)\\"'
 
 # ── 5. Book spines: fit the title to the spine ───────────────────────────────
 # Spine titles are vertical text in a fixed-height box with overflow: hidden, so
@@ -488,8 +497,7 @@ NAV_CSS = (
     "     them. The value is in the ZOOMED coordinate space, not screen pixels:\\n"
     "     the nav measures 56-57 physical px, which under the 1.12 phone zoom is\\n"
     "     50 CSS px here. Setting the screen figure leaves a 6px seam. Re-measure\\n"
-    "     (and divide by the zoom) if the nav's type or padding changes. Same\\n"
-    "     blur as the nav. */\\n"
+    "     (and divide by the zoom) if the nav's type or padding changes. */\\n"
     "  /* [build.py] Phone shelf: the scene panel is a flex item that wraps\\n"
     "     BELOW the three-row bookshelf, landing ~1030px down — off screen, so\\n"
     "     you cannot see the stack and the scene you just tapped at the same\\n"
@@ -517,8 +525,6 @@ NAV_CSS = (
     "         as it scrolled under, which reads as text overlapping the image.\\n"
     "         Same colour as the page, so at rest the band is invisible. */\\n"
     "      background: oklch(0.13 0.005 260) !important;\\n"
-    "      backdrop-filter: blur(12px) !important;\\n"
-    "      -webkit-backdrop-filter: blur(12px) !important;\\n"
     "    }\\n"
     "    /* The panel's inner row is sized for the desktop column: a 200px tile\\n"
     "       plus a 26px indent leaves the quote only 96px of a 350px panel, so\\n"
@@ -672,14 +678,14 @@ def main():
 
     # ── Nav blur ─────────────────────────────────────────────────────────────
     if BLUR_TO in html:
-        print("home nav blur: already removed")
+        print("nav blur     : already removed")
     elif BLUR_FROM in html:
         if html.count(BLUR_FROM) != 1:
             sys.exit("ERROR: expected 1 navBlur binding, found %d" % html.count(BLUR_FROM))
         html = html.replace(BLUR_FROM, BLUR_TO)
-        print("home nav blur: removed")
+        print("nav blur     : removed (all tabs)")
     else:
-        print("home nav blur: SKIPPED — navBlur binding not found")
+        print("nav blur     : SKIPPED — navBlur binding not found")
 
     # ── Nav background gradient ──────────────────────────────────────────────
     if NAVBG_TO in html:
@@ -689,6 +695,18 @@ def main():
         print("nav gradient : applied")
     else:
         print("nav gradient : SKIPPED — navBg binding not found")
+
+    # ── Nav tint opacity (compensates for the removed blur) ──────────────────
+    if NAVBG2_TO in html:
+        print("nav tint     : already bumped")
+    elif NAVBG2_FROM in html:
+        if html.count(NAVBG2_FROM) != 1:
+            sys.exit("ERROR: expected 1 non-home navBg tint, found %d"
+                     % html.count(NAVBG2_FROM))
+        html = html.replace(NAVBG2_FROM, NAVBG2_TO)
+        print("nav tint     : 0.55 -> 0.9")
+    else:
+        print("nav tint     : SKIPPED — non-home navBg value not found")
 
     # ── Book spine fitting ───────────────────────────────────────────────────
     if SPINE_TO in html:
