@@ -197,9 +197,11 @@ EXPERIENCE_CSS = (
     "     needs !important to widen the inline one, and therefore restates\\n"
     "     the inline color/transform entries verbatim.\\n"
     "\\n"
-    "     The padding-bottom / negative margin-bottom pair is required:\\n"
-    "     background-clip: text paints only inside the padding box, and\\n"
-    "     without it the descender on 'Google' is sheared off mid-fade.\\n"
+    "     The padding / negative margin pairs are required: background-clip:\\n"
+    "     text paints only inside the padding box. Bottom protects the\\n"
+    "     descender on 'Google'; right protects the italic overhang of the\\n"
+    "     selected row's last glyph (a final capital I's top serif leans\\n"
+    "     well past the advance width in Newsreader italic).\\n"
     "\\n"
     "     The selector was validated against every tab: it hits the six\\n"
     "     company names on Experience and nothing anywhere else. */\\n"
@@ -211,6 +213,8 @@ EXPERIENCE_CSS = (
     "    -webkit-text-fill-color: currentColor;\\n"
     "    padding-bottom: 0.34em;\\n"
     "    margin-bottom: -0.34em;\\n"
+    "    padding-right: 0.18em;\\n"
+    "    margin-right: -0.18em;\\n"
     "    transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1),\\n"
     "      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),\\n"
     "      -webkit-text-fill-color 0.45s cubic-bezier(0.22, 1, 0.36, 1)\\n"
@@ -239,7 +243,7 @@ LANG = [
      '\\n<link rel=\\"apple-touch-icon\\" href=\\"favicon.png\\">'
      # theme-color has the same one-way problem in reverse: the outer head's
      # copy dies with the swap, so the mobile address-bar tint reverted at boot.
-     '\n<meta name=\\"theme-color\\" content=\\"#17181c\\">'),
+     '\\n<meta name=\\"theme-color\\" content=\\"#17181c\\">'),
 ]
 
 # ── 10b. Drop the export's emoji favicon ───────────────────────────────────────
