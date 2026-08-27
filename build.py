@@ -83,15 +83,20 @@ RUNTIME_TO = (
     "      try {"
 )
 
-# ── 3. No nav blur, anywhere ─────────────────────────────────────────────────
+# ── 3. Nav blur: off the element, onto an outside overlay ────────────────────
 # The nav applied backdrop-filter: blur(12px) everywhere. On home it smeared a
-# frosted band across the hero photo; on the other tabs it hits a Chromium
-# compositor bug: the whole app sits in a wrapper scaled with zoom (--z,
-# 1-1.35x by viewport), and backdrop-filter under zoom missamples the
-# backdrop, so content scrolling beneath the bar smears and jitters whenever
-# zoom != 1. Drop the blur everywhere and let the bar's own tint do the
-# legibility work instead (alpha bump below). Text stays readable via navBg
-# plus the nav's existing text-shadow.
+# frosted band across the hero photo (dropped by design). On the other tabs it
+# hit a Chromium compositor bug: the whole app sits in a wrapper scaled with
+# zoom (--z, 1-1.35x by viewport), and backdrop-filter under zoom missamples
+# the backdrop, so content scrolling beneath the bar smeared and jittered
+# whenever zoom != 1.
+#
+# The frost itself is wanted, so it moves rather than dies: the nav element
+# keeps backdrop-filter: none, and nav-frost.js + the FROST_CSS overlay below
+# redraw the same 12px blur with a position: fixed body::before OUTSIDE the
+# zoom wrapper, in unzoomed screen space, where Chromium samples correctly.
+# The nav's translucent tint and text paint over the overlay (z-index 20 over
+# 19), so the composite matches the original one-element frost.
 #
 # This edits the value of an EXISTING binding rather than adding a new one:
 # the template is precompiled (data-dc-tpl indices), so a brand new {{ token }}
@@ -109,12 +114,14 @@ NAVBG_TO = ('navBg: s.tab === \\"home\\" ? \\"linear-gradient(to bottom, '
             'oklch(0.13 0.005 260 / 0.5) 0%, oklch(0.13 0.005 260 / 0.38) 45%, '
             'oklch(0.13 0.005 260 / 0) 100%)\\"')
 
-# With the blur gone the non-home bar's 0.55 tint would let sharp text ghost
-# through as it scrolls under. 0.9 keeps the translucent look — the page
-# behind is the same flat dark, so at rest the bar still reads as invisible —
-# while scrolled content dims enough that the nav text stays clean.
-NAVBG2_FROM = '\\"oklch(0.13 0.005 260 / 0.55)\\"'
-NAVBG2_TO = '\\"oklch(0.13 0.005 260 / 0.9)\\"'
+# ── 3b. About page snap ──────────────────────────────────────────────────────
+# Native CSS scroll-snap has the same zoom problem as the blur: Chromium
+# computes the snap offsets in pre-zoom units, so the snap lands off-target
+# and re-corrects mid-gesture — it read as jagged. Turn the native snap off
+# (the attribute string stays in the style, and about-snap.js keys on it as a
+# marker) and let that script reimplement the snap with zoom-immune math.
+SNAP_FROM = 'scroll-snap-type: y proximity;'
+SNAP_TO = 'scroll-snap-type: none;'
 
 # ── 5. Book spines: fit the title to the spine ───────────────────────────────
 # Spine titles are vertical text in a fixed-height box with overflow: hidden, so
@@ -157,6 +164,37 @@ VALLEY_SCRIPT = '  <script src="valley.js"></script>'
 # PROTOTYPE. Parallax between the hero photograph and the type over it.
 # Delete this line and hero-parallax.js to remove it; nothing else refers to it.
 PARALLAX_SCRIPT = '  <script src="hero-parallax.js"></script>'
+
+# See sections 3 and 3b for why these two exist.
+SNAP_SCRIPT = '  <script src="about-snap.js"></script>'
+FROST_SCRIPT = '  <script src="nav-frost.js"></script>'
+
+# The overlay half of section 3: nav-frost.js measures the nav into --frost-h
+# (physical px — getBoundingClientRect is post-zoom, exactly what a fixed
+# overlay needs) and toggles .nav-frost on every tab but home. body is outside
+# the zoom wrapper, so this backdrop-filter samples correctly.
+FROST_CSS = (
+    "\\n  /* [build.py] The frosted nav band, drawn OUTSIDE the zoom wrapper.\\n"
+    "     backdrop-filter inside the zoomed subtree missamples in Chromium\\n"
+    "     (content scrolling under the bar smeared and jittered), so the nav\\n"
+    "     itself keeps backdrop-filter: none and nav-frost.js drives this\\n"
+    "     fixed overlay in unzoomed screen space instead: same 12px frost,\\n"
+    "     sampled correctly. z-index 19 slides it just under the nav (20),\\n"
+    "     so the nav's tint and text paint over the blur exactly as the\\n"
+    "     original one-element frost composited. */\\n"
+    "  html.nav-frost body::before {\\n"
+    "    content: '';\\n"
+    "    position: fixed;\\n"
+    "    top: 0;\\n"
+    "    left: 0;\\n"
+    "    right: 0;\\n"
+    "    height: var(--frost-h, 0px);\\n"
+    "    z-index: 19;\\n"
+    "    pointer-events: none;\\n"
+    "    backdrop-filter: blur(12px);\\n"
+    "    -webkit-backdrop-filter: blur(12px);\\n"
+    "  }\\n"
+)
 
 # The doorway is the existing photo caption, styled to look like one. A stylesheet
 # rule rather than injected markup, because anything injected into the app's
@@ -437,6 +475,7 @@ NAV_CSS_ANCHOR = "\\n<\\u002Fstyle>\\n<\\u002Fhelmet>"
 NAV_CSS = (
     VALLEY_CSS +
     EXPERIENCE_CSS +
+    FROST_CSS +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"
@@ -696,17 +735,17 @@ def main():
     else:
         print("nav gradient : SKIPPED — navBg binding not found")
 
-    # ── Nav tint opacity (compensates for the removed blur) ──────────────────
-    if NAVBG2_TO in html:
-        print("nav tint     : already bumped")
-    elif NAVBG2_FROM in html:
-        if html.count(NAVBG2_FROM) != 1:
-            sys.exit("ERROR: expected 1 non-home navBg tint, found %d"
-                     % html.count(NAVBG2_FROM))
-        html = html.replace(NAVBG2_FROM, NAVBG2_TO)
-        print("nav tint     : 0.55 -> 0.9")
+    # ── About page snap (native off; about-snap.js takes over) ───────────────
+    if SNAP_TO in html:
+        print("about snap   : already native-off")
+    elif SNAP_FROM in html:
+        if html.count(SNAP_FROM) != 1:
+            sys.exit("ERROR: expected 1 scroll-snap-type, found %d"
+                     % html.count(SNAP_FROM))
+        html = html.replace(SNAP_FROM, SNAP_TO)
+        print("about snap   : native off, about-snap.js drives it")
     else:
-        print("nav tint     : SKIPPED — non-home navBg value not found")
+        print("about snap   : SKIPPED — scroll-snap-type not found")
 
     # ── Book spine fitting ───────────────────────────────────────────────────
     if SPINE_TO in html:
@@ -745,10 +784,16 @@ def main():
                 extra = LOADING_SCRIPT + "\n" + extra    # must load first
             if os.path.isfile(os.path.join(os.path.abspath(args.out), "hero-parallax.js")):
                 extra += "\n" + PARALLAX_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "about-snap.js")):
+                extra += "\n" + SNAP_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "nav-frost.js")):
+                extra += "\n" + FROST_SCRIPT
             html = html[:m.end()] + "\n" + extra + html[m.end():]
-            print("scripts      : valley%s%s"
+            print("scripts      : valley%s%s%s%s"
                   % (" + loading" if LOADING_SCRIPT in extra else "",
-                     " + parallax" if PARALLAX_SCRIPT in extra else ""))
+                     " + parallax" if PARALLAX_SCRIPT in extra else "",
+                     " + snap" if SNAP_SCRIPT in extra else "",
+                     " + frost" if FROST_SCRIPT in extra else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
