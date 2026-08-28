@@ -171,8 +171,6 @@ FROST_SCRIPT = '  <script src="nav-frost.js"></script>'
 # Section 14 (Enter/Space on role=button rows) and the watching.txt window's
 # hand-editable watching.json (same idea as tasks.json — see watching.js).
 A11Y_SCRIPT = '  <script src="a11y.js"></script>'
-# The Route: a climbing topo of the career drawn up the hero photo (route.js).
-ROUTE_SCRIPT = '  <script src="route.js"></script>'
 WATCHING_SCRIPT = '  <script src="watching.js"></script>'
 
 # The overlay half of section 3: nav-frost.js measures the nav into --frost-h
@@ -1083,17 +1081,14 @@ def main():
                 extra += "\n" + A11Y_SCRIPT
             if os.path.isfile(os.path.join(os.path.abspath(args.out), "watching.js")):
                 extra += "\n" + WATCHING_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "route.js")):
-                extra += "\n" + ROUTE_SCRIPT
             html = html[:m.end()] + "\n" + extra + html[m.end():]
-            print("scripts      : valley%s%s%s%s%s%s%s"
+            print("scripts      : valley%s%s%s%s%s%s"
                   % (" + loading" if LOADING_SCRIPT in extra else "",
                      " + parallax" if PARALLAX_SCRIPT in extra else "",
                      " + snap" if SNAP_SCRIPT in extra else "",
                      " + frost" if FROST_SCRIPT in extra else "",
                      " + a11y" if A11Y_SCRIPT in extra else "",
-                     " + watching" if WATCHING_SCRIPT in extra else "",
-                     " + route" if ROUTE_SCRIPT in extra else ""))
+                     " + watching" if WATCHING_SCRIPT in extra else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
