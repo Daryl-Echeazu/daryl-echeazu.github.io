@@ -168,6 +168,10 @@ PARALLAX_SCRIPT = '  <script src="hero-parallax.js"></script>'
 # See sections 3 and 3b for why these two exist.
 SNAP_SCRIPT = '  <script src="about-snap.js"></script>'
 FROST_SCRIPT = '  <script src="nav-frost.js"></script>'
+# Section 14 (Enter/Space on role=button rows) and the watching.txt window's
+# hand-editable watching.json (same idea as tasks.json — see watching.js).
+A11Y_SCRIPT = '  <script src="a11y.js"></script>'
+WATCHING_SCRIPT = '  <script src="watching.js"></script>'
 
 # The overlay half of section 3: nav-frost.js measures the nav into --frost-h
 # (physical px — getBoundingClientRect is post-zoom, exactly what a fixed
@@ -502,6 +506,31 @@ DARYLOS_CSS = (
     "  }\\n"
 )
 
+# ── 14. Accessibility: Experience rows by keyboard ───────────────────────────
+# The six company rows respond only to mouse-enter and click. tabindex/role
+# make them reachable by Tab (static attributes are safe to add — only new
+# {{ tokens }} are impossible in the precompiled template), a11y.js translates
+# Enter/Space on any div[role=button] into a click, and the gold
+# focus-visible ring below makes keyboard position visible. sc-camel-on-click
+# stays where it was, so mouse behavior is untouched.
+A11Y_ROW_FROM = ('<div sc-camel-on-mouse-enter=\\"{{ w.activate }}\\" '
+                 'sc-camel-on-click=\\"{{ w.activate }}\\" '
+                 'style=\\"padding: 9px 0;')
+A11Y_ROW_TO = ('<div tabindex=\\"0\\" role=\\"button\\" '
+               'sc-camel-on-mouse-enter=\\"{{ w.activate }}\\" '
+               'sc-camel-on-click=\\"{{ w.activate }}\\" '
+               'style=\\"padding: 9px 0;')
+
+A11Y_CSS = (
+    "\\n  /* [build.py] Keyboard focus ring for rows promoted to buttons\\n"
+    "     (see a11y.js). focus-visible only, so mouse clicks stay clean. */\\n"
+    "  [role='button']:focus-visible {\\n"
+    "    outline: 2px solid oklch(0.78 0.14 78 / 0.8);\\n"
+    "    outline-offset: 4px;\\n"
+    "    border-radius: 4px;\\n"
+    "  }\\n"
+)
+
 # ── 10. Accessibility: language attribute ────────────────────────────────────
 # Neither <html> carried a lang attribute. Screen readers use it to pick a
 # pronunciation dictionary, so without it an English page may be read with the
@@ -707,6 +736,7 @@ NAV_CSS = (
     EXPERIENCE_CSS +
     FROST_CSS +
     DARYLOS_CSS +
+    A11Y_CSS +
     "\\n  /* [build.py] Scale the whole phone view up. The wrapper's zoom and\\n"
     "     height both resolve through --z, so overriding that one property\\n"
     "     scales everything uniformly — text, photos, shelf — exactly as the\\n"
@@ -994,6 +1024,18 @@ def main():
           % (dos_done,
              ", %d already" % dos_already if dos_already else ""))
 
+    # ── Experience rows: keyboard access ─────────────────────────────────────
+    if A11Y_ROW_TO in html:
+        print("a11y rows    : already patched")
+    elif A11Y_ROW_FROM in html:
+        if html.count(A11Y_ROW_FROM) != 1:
+            sys.exit("ERROR: expected 1 experience row, found %d"
+                     % html.count(A11Y_ROW_FROM))
+        html = html.replace(A11Y_ROW_FROM, A11Y_ROW_TO)
+        print("a11y rows    : tabindex + role on company rows")
+    else:
+        print("a11y rows    : SKIPPED — row markup not found")
+
     # ── Book spine fitting ───────────────────────────────────────────────────
     if SPINE_TO in html:
         print("spine fit    : already present")
@@ -1035,12 +1077,18 @@ def main():
                 extra += "\n" + SNAP_SCRIPT
             if os.path.isfile(os.path.join(os.path.abspath(args.out), "nav-frost.js")):
                 extra += "\n" + FROST_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "a11y.js")):
+                extra += "\n" + A11Y_SCRIPT
+            if os.path.isfile(os.path.join(os.path.abspath(args.out), "watching.js")):
+                extra += "\n" + WATCHING_SCRIPT
             html = html[:m.end()] + "\n" + extra + html[m.end():]
-            print("scripts      : valley%s%s%s%s"
+            print("scripts      : valley%s%s%s%s%s%s"
                   % (" + loading" if LOADING_SCRIPT in extra else "",
                      " + parallax" if PARALLAX_SCRIPT in extra else "",
                      " + snap" if SNAP_SCRIPT in extra else "",
-                     " + frost" if FROST_SCRIPT in extra else ""))
+                     " + frost" if FROST_SCRIPT in extra else "",
+                     " + a11y" if A11Y_SCRIPT in extra else "",
+                     " + watching" if WATCHING_SCRIPT in extra else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
@@ -1223,6 +1271,26 @@ def main():
     if "</script>" in slim_json:
         sys.exit("ERROR: manifest JSON would break out of its script tag")
     html = html[:man_m.start(1)] + "\n" + slim_json + "\n" + html[man_m.end(1):]
+
+    # Preload the hero: the boot cover lifts after ~900ms, and on a slow
+    # connection the hero used to start downloading only once the runtime
+    # mounted the <img>. A preload in the outer head starts the fetch with the
+    # first bytes of the page, so the reveal never catches a half-loaded hero.
+    # This runs AFTER the manifest rewrite above: that splice uses match
+    # offsets captured earlier, and inserting into html before it would shift
+    # them (learned the hard way — the first attempt corrupted the bundle).
+    if hero_name:
+        preload = ('\n  <link rel="preload" as="image" href="assets/%s">'
+                   % hero_name)
+        if preload in html:
+            print("hero preload : already present")
+        else:
+            tm = re.search(r"</title>", html)
+            if tm:
+                html = html[:tm.end()] + preload + html[tm.end():]
+                print("hero preload : %s" % hero_name)
+            else:
+                print("hero preload : SKIPPED — no <title> anchor")
 
     if RUNTIME_TO in html:
         print("runtime     : already patched")
