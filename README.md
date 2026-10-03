@@ -42,7 +42,7 @@ Commit and push; Pages redeploys in under a minute.
 | File | What it is |
 |---|---|
 | `build.py` | Turns the export into the site: extracts assets, converts images, adds preloads/SEO, applies display fixes |
-| `content_patches.py` | Copy (current role, Projects, headline words), URL routing, cover preloading, accessibility and contrast fixes |
+| `content_patches.py` | Copy (current role, headline words), URL routing, cover preloading, accessibility and contrast fixes |
 | `fetch_covers.py` | Downloads The Stacks' cover art into `covers/`; rerun after adding books or anime in Claude Design |
 | `covers/` | Self-hosted cover art, so hovering a spine never waits on a third-party API |
 | `*.js` (root) | Loose scripts injected into the page: loading cover, the Valley map, parallax, snap, nav frost, keyboard support, watching.txt |

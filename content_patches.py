@@ -1,5 +1,5 @@
 """
-Template patches applied by build.py: copy, Experience/Projects, routing,
+Template patches applied by build.py: copy, Experience, routing,
 The Stacks covers, accessibility and loading fixes (Oct 2026).
 
 Unlike the older patches in build.py, which match the JSON-escaped template
@@ -96,7 +96,7 @@ COPY = [
     ('{ year: "FALL 2026", org: "Google", role: "Software Engineering — Cloud", '
      'desc: "Enterprise agents.", tags: ["AGENTS", "GCP"], status: "INCOMING",',
      '{ year: "FALL 2026 — NOW", org: "Google", role: "Software Engineering — Google Cloud", '
-     'desc: "Building Gemini Enterprise Agents on Google Cloud’s Applied AI team.", '
+     'desc: "Building Gemini Enterprise Agents.", '
      'tags: ["GEMINI", "AGENTS", "GCP"], status: "NOW",'),
     ('tags: ["ML INFRASTRUCTURE", "INTERNAL TOOLS"], status: "NOW",',
      'tags: ["ML INFRASTRUCTURE", "INTERNAL TOOLS"], status: "",'),
@@ -138,17 +138,8 @@ HERO = [
      '        { label: "GitHub", href: "' + GITHUB_URL + '", target: "_blank", slug: "github" },'),
 ]
 
-# ── Experience: real bullets in the detail panel, aligned to the list ────────
+# ── Experience: detail panel aligned to the list, readable names ──────────
 EXPERIENCE = [
-    ('<p style="font-size: 16px; line-height: 1.7; color: oklch(0.78 0.005 260); margin: 10px 0 0; '
-     'text-wrap: pretty;">{{ active.desc }}</p>',
-     '<div style="font-size: 16px; line-height: 1.7; color: oklch(0.78 0.005 260); margin: 10px 0 0; '
-     'text-wrap: pretty;">{{ active.descEl }}</div>'),
-    ('active: { ...(this.worksList[s.activeWork] || this.worksList[0]), counter: "0" + (s.activeWork + 1) },',
-     'active: (() => { const w = this.worksList[s.activeWork] || this.worksList[0]; '
-     'return { ...w, counter: "0" + (s.activeWork + 1), descEl: React.createElement(React.Fragment, null, '
-     'React.createElement("p", { style: { margin: 0 } }, w.desc), '
-     'this.bulletList(this.workBullets(w.org), mob, "14px")) }; })(),'),
     # The panel was centred against the whole list, so the selected company
     # and its details never lined up. Pin it to the top instead.
     ('padding-left: 38px; min-height: 260px; display: flex; flex-direction: column; justify-content: center;',
@@ -160,53 +151,12 @@ EXPERIENCE = [
      'color: s.activeWork === i ? "oklch(0.94 0.005 260)" : "oklch(0.56 0.005 260)",'),
 ]
 
-# ── Projects, under Selected Work ────────────────────────────────────────────
-PROJECTS_ANCHOR = ('        <div style="display: flex; justify-content: center; align-items: center; '
-                   'gap: 34px; padding: 44px 0 20px;">')
-PROJECTS_MARKUP = (
-    '        <div style="max-width: 960px; margin: 76px auto 0;">\n'
-    '          <div style="display: flex; justify-content: space-between; align-items: baseline; '
-    'border-bottom: 1px solid oklch(0.26 0.005 260); padding-bottom: 14px;">\n'
-    '            <h2 style="font-family: \'Instrument Serif\', Georgia, serif; font-weight: 400; '
-    'font-size: clamp(30px, 3.2vw, 40px); margin: 0; line-height: 1.2;">Projects</h2>\n'
-    '            <a href="' + GITHUB_URL + '" target="_blank" rel="noreferrer" '
-    'style="font-family: \'Geist Mono\', monospace; font-size: 10.5px; letter-spacing: 0.08em; '
-    'color: oklch(0.80 0.005 260); border-bottom: 1px solid oklch(0.42 0.005 260); padding-bottom: 2px;" '
-    'style-hover="color: oklch(0.97 0.003 260); border-bottom-color: oklch(0.97 0.003 260 / 0.6);">GITHUB ↗</a>\n'
-    '          </div>\n'
-    '          <sc-for list="{{ projects }}" as="p" hint-placeholder-count="2">\n'
-    '            <div style="display: grid; grid-template-columns: {{ projCols }}; gap: 10px 48px; '
-    'padding: 24px 0; border-bottom: 1px solid oklch(0.21 0.005 260);">\n'
-    '              <div>\n'
-    '                <h3 style="font-family: \'Newsreader\', Georgia, serif; font-weight: 400; font-size: 24px; '
-    'line-height: 1.25; margin: 0; color: oklch(0.94 0.005 260);">{{ p.title }}</h3>\n'
-    '                <div style="font-family: \'Geist Mono\', monospace; font-size: 10.5px; letter-spacing: 0.08em; '
-    'line-height: 1.7; color: oklch(0.63 0.005 260); margin-top: 8px;">{{ p.stack }}</div>\n'
-    '              </div>\n'
-    '              <div>{{ p.bulletsEl }}</div>\n'
-    '            </div>\n'
-    '          </sc-for>\n'
-    '        </div>\n'
-)
-
 # ── Component logic: new methods and bindings ────────────────────────────────
 METHODS_ANCHOR = "  componentWillUnmount() {"
-METHODS = '''  // [build.py] Helpers for the Experience/Projects lists, URL routing,
+METHODS = '''  // [build.py] Helpers for URL routing,
   // lazy gallery photos and the locally served shelf covers.
   tabHash = { home: "", meanwhile: "about", work: "experience", live: "os", inbox: "inbox" };
   touchUI = typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(hover: none)").matches;
-
-  bulletList(items, mob, top) {
-    if (!items || !items.length) return null;
-    return React.createElement("ul", { style: { margin: (top || "0") + " 0 0", padding: "0 0 0 18px", fontSize: mob ? "14.5px" : "15px", lineHeight: 1.6, color: "oklch(0.74 0.005 260)" } },
-      items.map((b, i) => React.createElement("li", { key: i, style: { margin: "0 0 8px", textWrap: "pretty" } }, b)));
-  }
-  workBullets(org) {
-    const j = this.jobsData.find(j => j.org === org || j.org.indexOf(org) === 0);
-    if (j && j.bullets.length) return j.bullets;
-    const p = this.projectsData.find(p => p.title.indexOf(org) === 0);
-    return p ? p.bullets : [];
-  }
 
   // Gallery photos load only once the About tab is open, and only the one on
   // screen plus its neighbours; each stays loaded after that.
@@ -268,9 +218,6 @@ LOGIC = [
     ('    const mob = s.vw < 760;\n',
      '    const mob = s.vw < 760;\n    this.navIds = tabDefs.map(t => t[0]);\n'),
     ('      works: this.worksList.map((w, i) => ({',
-     '      projects: this.projectsData.filter(p => !this.worksList.some(w => p.title.indexOf(w.org) === 0))'
-     '.map(p => ({ title: p.title, stack: p.stack, bulletsEl: this.bulletList(p.bullets, mob) })),\n'
-     '      projCols: mob ? "minmax(0, 1fr)" : "minmax(0, 0.85fr) minmax(0, 1.15fr)",\n'
      '      heroSub: mob ? "CS + MATH @ UCHICAGO · GOOGLE CLOUD" '
      ': "CS + MATH @ UCHICAGO · GEMINI ENTERPRISE AGENTS @ GOOGLE CLOUD",\n'
      '      heroSubFont: mob ? "11px" : "12px",\n'
@@ -397,7 +344,6 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
             "rotWords = %s;" % json.dumps(ROT_WORDS, ensure_ascii=False))
     p.subs("hero", HERO)
     p.subs("experience", EXPERIENCE)
-    p.sub("projects", PROJECTS_ANCHOR, PROJECTS_MARKUP + PROJECTS_ANCHOR)
     p.sub("methods", METHODS_ANCHOR, METHODS + METHODS_ANCHOR)
     p.subs("logic", LOGIC)
     p.subs("markup", MARKUP)
@@ -459,10 +405,10 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
     if hero_uuid and hero_srcset:
         attrs = (' sc-camel-src-set="{{ heroSrcset }}" sizes="100vw" fetchpriority="high" aria-hidden="true"')
         want = '<img sc-camel-src="{{ heroSrc }}"%s' % attrs
-        p.sub("hero bindings", "      projects: this.projectsData.",
+        p.sub("hero bindings", "      heroSub: mob ? ",
               '      heroSrc: s.heroReady ? "%s" : undefined,\n'
               '      heroSrcset: s.heroReady ? "%s" : undefined,\n'
-              '      projects: this.projectsData.' % (hero_uuid, hero_srcset))
+              '      heroSub: mob ? ' % (hero_uuid, hero_srcset))
         if want in p.text:
             p.already.append("hero srcset")
         else:
