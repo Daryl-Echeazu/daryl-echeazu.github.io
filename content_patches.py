@@ -124,15 +124,15 @@ ROT_WORDS = ["touching grass", "hooping", "lifting heavy", "zetamaccing",
 HERO = [
     ('{{ rotWord }}{{ rotPeriod }}</span></h1>',
      '{{ rotWord }}{{ rotPeriod }}</span></h1>\n'
-     '        <p style="margin: 16px 0 0; font-family: \'Geist Mono\', monospace; '
-     'font-size: {{ heroSubFont }}; letter-spacing: 0.08em; line-height: 1.6; '
+     '        <p style="margin: 14px 0 0; font-family: \'Newsreader\', Georgia, serif; '
+     'font-size: {{ heroSubFont }}; letter-spacing: 0.01em; line-height: 1.5; '
      'color: oklch(0.94 0.005 260 / 0.88); text-shadow: 0 1px 3px oklch(0 0 0 / 0.55);">'
      '{{ heroSub }}</p>'),
     ('<a href="https://www.linkedin.com/in/daryl-echeazu/" target="_blank" rel="noreferrer">LINKEDIN</a>\n'
      '          <a href="mailto:darecheazu@uchicago.edu">EMAIL</a>',
-     '<a href="https://www.linkedin.com/in/daryl-echeazu/" target="_blank" rel="noreferrer">LINKEDIN</a>\n'
-     '          <a href="' + GITHUB_URL + '" target="_blank" rel="noreferrer">GITHUB</a>\n'
-     '          <a href="mailto:darecheazu@uchicago.edu">EMAIL</a>'),
+     '<a href="https://www.linkedin.com/in/daryl-echeazu/" target="_blank" rel="noreferrer">LinkedIn</a>\n'
+     '          <a href="' + GITHUB_URL + '" target="_blank" rel="noreferrer">GitHub</a>\n'
+     '          <a href="mailto:darecheazu@uchicago.edu">Email</a>'),
     ('{ label: "Email", href: "mailto:darecheazu@uchicago.edu", target: "", slug: "gmail" },',
      '{ label: "Email", href: "mailto:darecheazu@uchicago.edu", target: "", slug: "gmail" },\n'
      '        { label: "GitHub", href: "' + GITHUB_URL + '", target: "_blank", slug: "github" },'),
@@ -218,9 +218,8 @@ LOGIC = [
     ('    const mob = s.vw < 760;\n',
      '    const mob = s.vw < 760;\n    this.navIds = tabDefs.map(t => t[0]);\n'),
     ('      works: this.worksList.map((w, i) => ({',
-     '      heroSub: mob ? "CS + MATH @ UCHICAGO · GOOGLE CLOUD" '
-     ': "CS + MATH @ UCHICAGO · GEMINI ENTERPRISE AGENTS @ GOOGLE CLOUD",\n'
-     '      heroSubFont: mob ? "11px" : "12px",\n'
+     '      heroSub: "CS + Math at UChicago. Building Gemini Enterprise Agents at Google.",\n'
+     '      heroSubFont: mob ? "15px" : "17px",\n'
      '      works: this.worksList.map((w, i) => ({'),
     # Genre switch: warm that shelf immediately.
     ('pick: () => { if (s.genre !== id) this.setState({ genre: id, shelfHov: -1, shelfLast: undefined }); },',
@@ -256,6 +255,11 @@ LOGIC = [
 
 # ── Markup: headings, landmarks, keyboard access, contrast ───────────────────
 MARKUP = [
+    # Plain wording in the nav: shouted caps were half of the template look.
+    ('["meanwhile", "ABOUT"], ["work", "EXPERIENCE"]', '["meanwhile", "About"], ["work", "Experience"]'),
+    ('font-size: {{ navNameFont }};">DARYL ECHEAZU</a>', 'font-size: {{ navNameFont }};">Daryl Echeazu</a>'),
+    ('fontFamily: "\'Geist Mono\', monospace", fontSize: "9px", letterSpacing: "0.22em"',
+     'fontFamily: "\'Newsreader\', Georgia, serif", fontSize: "12px", letterSpacing: "0.04em"'),
     ('<span style="font-family: \'Instrument Serif\', Georgia, serif; font-size: clamp(34px, 4vw, 48px);">'
      'Selected Work</span>',
      '<h2 style="font-family: \'Instrument Serif\', Georgia, serif; font-weight: 400; '
@@ -301,6 +305,10 @@ MARKUP = [
     ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
      '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">\n', ''),
 ]
+
+LABEL_FROM = "font-family: 'Geist Mono', monospace"
+LABEL_TO = "font-family: 'Newsreader', Georgia, serif"
+LABEL_SCALE = 1.35
 
 # Added to markup that build.py's DARYLOS "titlebar contents" patch writes;
 # build.py strips it before checking whether that patch is already applied.
@@ -357,6 +365,38 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
     else:
         p.sub("extra css", EXTRA_CSS_ANCHOR, EXTRA_CSS + EXTRA_CSS_ANCHOR)
 
+    # Labels: the tracked-out Geist Mono caps (nav, dates, tags, captions)
+    # read as an AI template. On the main pages they become upright
+    # Newsreader — the body face — 35% larger, with near-normal spacing.
+    # DarylOS (from its sc-if on) keeps its mono: it is meant to look like a
+    # computer. Picked in the font lab, Oct 2026.
+    end = p.text.find('<sc-if value="{{ isLive }}"')
+    if end < 0:
+        p.problems.append("labels: DarylOS section not found")
+    else:
+        changed = [0]
+
+        def to_serif(m):
+            st = m.group(1)
+            if LABEL_FROM not in st:
+                return m.group(0)
+            st = st.replace(LABEL_FROM, LABEL_TO)
+            # Labels clipped to a fixed box (the spine volume tags) don't grow:
+            # they get slightly smaller with no tracking so "SHIPPUDEN" fits.
+            fitted = "overflow: hidden" in st and "white-space: nowrap" in st
+            st = st if fitted else re.sub(r'font-size: ([\d.]+)px', lambda f: "font-size: %spx" % (
+                ("%.2f" % (float(f.group(1)) * LABEL_SCALE)).rstrip("0").rstrip(".")), st)
+            st = re.sub(r'letter-spacing: [^;"]+', "letter-spacing: %s" % ("0" if fitted else "0.015em"), st)
+            if fitted:
+                st = re.sub(r'font-size: ([\d.]+)px', lambda f: "font-size: %spx" % (
+                    ("%.2f" % (float(f.group(1)) * 0.84)).rstrip("0").rstrip(".")), st)
+            changed[0] += 1
+            return 'style="%s"' % st
+        head = re.sub(r'style="([^"]*)"', to_serif, p.text[:end])
+        p.text = head + p.text[end:]
+        (p.applied if changed[0] else p.already).append(
+            "serif labels" + (" (%d)" % changed[0] if changed[0] else ""))
+
     # Mono labels (dates, tags, captions) at 0.55 were 4.15:1 — under 4.5 at
     # 10-11px. Every use is a small label, so lift them all.
     n = p.text.count("oklch(0.55 0.005 260)")
@@ -405,10 +445,10 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
     if hero_uuid and hero_srcset:
         attrs = (' sc-camel-src-set="{{ heroSrcset }}" sizes="100vw" fetchpriority="high" aria-hidden="true"')
         want = '<img sc-camel-src="{{ heroSrc }}"%s' % attrs
-        p.sub("hero bindings", "      heroSub: mob ? ",
+        p.sub("hero bindings", "      heroSub: ",
               '      heroSrc: s.heroReady ? "%s" : undefined,\n'
               '      heroSrcset: s.heroReady ? "%s" : undefined,\n'
-              '      heroSub: mob ? ' % (hero_uuid, hero_srcset))
+              '      heroSub: ' % (hero_uuid, hero_srcset))
         if want in p.text:
             p.already.append("hero srcset")
         else:
