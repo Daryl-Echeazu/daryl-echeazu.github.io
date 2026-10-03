@@ -408,8 +408,10 @@
   document.addEventListener("keydown", function (e) {
     if (!root || !root.hasAttribute("data-open")) return;
     if (e.key === "Escape") { e.preventDefault(); close(); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+    // stopPropagation: the app's window-level arrow keys switch tabs, and
+    // would change the page behind the open map.
+    else if (e.key === "ArrowRight") { e.preventDefault(); e.stopPropagation(); step(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); e.stopPropagation(); step(-1); }
   });
 
   // Delegated so it survives the app's re-renders. The photo caption is the

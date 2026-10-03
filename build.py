@@ -20,7 +20,14 @@ assets. See README.md for the full list and the measurements behind each one.
      JPEGs are downscaled to what the layout can actually use (--max-edge,
      hero exempt) and recompressed. index.html drops from ~8.7 MB to ~120 KB.
 
-All changes are idempotent, so re-running on an already-built file is safe.
+All changes are idempotent, and re-running on an already-built index.html is
+supported: the asset extraction is skipped (there is nothing left to extract)
+and only patches that are not yet present are applied. That is how changes are
+made between Claude Design exports.
+
+Template copy, Experience/Projects, routing, covers and accessibility patches
+live in content_patches.py. Pass --strict to fail the build when any patch
+cannot find its target, instead of printing SKIPPED and carrying on.
 
 USAGE
     python build.py "path/to/claude-design-export.html"
@@ -38,6 +45,17 @@ import os
 import re
 import shutil
 import sys
+from datetime import date
+
+import content_patches
+
+# Every patch that cannot find its target reports here; --strict fails on any.
+SKIPS = []
+
+
+def skip(msg):
+    print(msg)
+    SKIPS.append(msg.strip())
 
 # ── 1. Wide-viewport zoom ────────────────────────────────────────────────────
 # The root wrapper is laid out for Claude Design's 1280px preview. `zoom` scales
@@ -158,20 +176,27 @@ SPINE_TO = (
 # duplicated into the template instead.
 # The loading cover must be FIRST: it has to be up before the bundler
 # replaces documentElement and the raw {{ }} template flashes.
-LOADING_SCRIPT = '  <script src="loading.js"></script>'
-VALLEY_SCRIPT = '  <script src="valley.js"></script>'
-
-# PROTOTYPE. Parallax between the hero photograph and the type over it.
-# Delete this line and hero-parallax.js to remove it; nothing else refers to it.
-PARALLAX_SCRIPT = '  <script src="hero-parallax.js"></script>'
-
-# See sections 3 and 3b for why these two exist.
-SNAP_SCRIPT = '  <script src="about-snap.js"></script>'
-FROST_SCRIPT = '  <script src="nav-frost.js"></script>'
-# Section 14 (Enter/Space on role=button rows) and the watching.txt window's
-# hand-editable watching.json (same idea as tasks.json — see watching.js).
-A11Y_SCRIPT = '  <script src="a11y.js"></script>'
-WATCHING_SCRIPT = '  <script src="watching.js"></script>'
+#
+# Each is injected if its file exists at the site root, independently of the
+# others. Everything but loading.js is `defer`: deferred scripts still run
+# before DOMContentLoaded — i.e. before the bundler unpacks — so their
+# listeners are in place exactly as before, but they no longer block the
+# first paint of the loading cover.
+#   hero-parallax.js  PROTOTYPE. Parallax between the hero photo and its type.
+#   about-snap.js, nav-frost.js   see sections 3 and 3b.
+#   a11y.js           section 14 (Enter/Space on role=button elements).
+#   watching.js       the watching.txt window's hand-editable watching.json.
+SCRIPTS = [               # (file, defer) — order is execution order
+    ("loading.js", False),
+    ("valley.js", True),
+    ("hero-parallax.js", True),
+    ("about-snap.js", True),
+    ("nav-frost.js", True),
+    ("a11y.js", True),
+    ("watching.js", True),
+]
+SCRIPT_TAG_RE = r'\n?[ \t]*<script(?: defer)? src="(?:%s)"></script>' % "|".join(
+    re.escape(f) for f, _ in SCRIPTS)
 
 # The overlay half of section 3: nav-frost.js measures the nav into --frost-h
 # (physical px — getBoundingClientRect is post-zoom, exactly what a fixed
@@ -564,8 +589,7 @@ EMOJI_ICON_RE = r'(?:\\n)?<link rel=\\"icon\\" href=\\"data:image/svg\+xml[^>]*?
 # ── 13. Noscript: real content instead of an apology ─────────────────────────────
 # Crawlers and readers without JavaScript saw only "This page requires
 # JavaScript to display." Give them the actual page in one card: the name and
-# the site's own line. (There are no external links to list — contact goes
-# through the Inbox.)
+# the site's own line, and the ways to reach Daryl (the Inbox needs JS).
 NOSCRIPT_FROM = (
     '<div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 '
     '-apple-system,BlinkMacSystemFont,sans-serif;color:#999;'
@@ -583,8 +607,11 @@ NOSCRIPT_TO = (
     '        <h1 style="font-size:2em;font-weight:normal;letter-spacing:0.02em;">'
     'Daryl Echeazu</h1>\n'
     '        <p style="margin-top:0.8em;font-size:1.05em;line-height:1.6;color:#c7c4bc;">'
-    'Mostly building, occasionally touching grass. CS + Math at UChicago. '
-    'ML at Apple; Google Cloud next.</p>\n'
+    + content_patches.DESCRIPTION + '</p>\n'
+    '        <p style="margin-top:1.4em;font-size:0.95em;letter-spacing:0.04em;">'
+    '<a style="color:#e8c46a;" href="' + content_patches.LINKEDIN_URL + '">LinkedIn</a> · '
+    '<a style="color:#e8c46a;" href="' + content_patches.GITHUB_URL + '">GitHub</a> · '
+    '<a style="color:#e8c46a;" href="mailto:' + content_patches.EMAIL + '">Email</a></p>\n'
     '        <p style="margin-top:1.6em;font-size:0.8em;letter-spacing:0.08em;color:#8b8880;">'
     'THE FULL SITE NEEDS JAVASCRIPT</p>\n'
     '      </div>\n'
@@ -619,9 +646,9 @@ ROTATION = [
 SITE_URL = "https://darylecheazu.me"
 SOCIAL_IMAGE = "social-preview.jpg"
 SOCIAL_MARK = "<!-- [build.py] link preview -->"
+SOCIAL_END = "<!-- [build.py] /link preview -->"
 SOCIAL_TITLE = "Daryl Echeazu"
-SOCIAL_DESC = ("Mostly building, occasionally touching grass. "
-               "CS + Math at UChicago. ML at Apple; Google Cloud next.")
+SOCIAL_DESC = content_patches.DESCRIPTION
 SOCIAL_ALT = "Daryl Echeazu's site: El Capitan, Yosemite, with the site title over it."
 
 
@@ -654,6 +681,8 @@ def social_block(version):
         '  <meta name="viewport" content="width=device-width, initial-scale=1">',
         '  <link rel="icon" type="image/png" href="favicon.png">',
         '  <link rel="apple-touch-icon" href="favicon.png">',
+        '  <script type="application/ld+json">%s</script>' % content_patches.person_jsonld(),
+        "  " + SOCIAL_END,
     ])
 
 
@@ -933,6 +962,85 @@ def recompress_jpeg(raw, quality, max_edge=None):
         return raw, "recompress failed: %s" % exc
 
 
+# ── Images ───────────────────────────────────────────────────────────────────
+# The hero is served as WebP at the width the screen needs (srcset), with the
+# JPEG — capped at HERO_MAX_EDGE — as the fallback src and og:image. Other
+# photos become WebP at --max-edge; logo PNGs shrink to what a 28px slot needs.
+HERO_WIDTHS = (828, 1280, 1920)
+HERO_MAX_EDGE = 1920
+HERO_MARK_RE = r'<!-- \[build\.py\] hero: ([A-Za-z0-9._-]+) -->'
+WEBP_PHOTO_Q = 80
+WEBP_LOGO_Q = 90
+LOGO_MAX_EDGE = 128       # rendered at most 28 CSS px; 4x covers zoom + Retina
+PNG_MIN_BYTES = 64000     # leave small PNGs alone
+
+# Latin subsets drawn on the home view; preloaded so text doesn't wait on them.
+PRELOAD_FONTS = {("Instrument Serif", "normal"), ("Instrument Serif", "italic"),
+                 ("Geist Mono", "normal")}
+
+
+def hero_variant(hero_name, width):
+    return "%s-%d.webp" % (os.path.splitext(hero_name)[0], width)
+
+
+def optimize_assets(slim, assetdir, prefix, hero_name, max_edge):
+    """Hero variants + WebP conversion, in place on assets/ and the manifest.
+    Safe to rerun: converted files are skipped, variants only made if absent."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return ["images: Pillow not installed — skipped (pip install pillow)"]
+    notes = []
+    for uuid, e in sorted(slim.items()):
+        name = e.get("url", "").rsplit("/", 1)[-1]
+        path = os.path.join(assetdir, name)
+        if e["mime"] not in ("image/jpeg", "image/png"):
+            continue
+        webp = os.path.splitext(name)[0] + ".webp"
+        if not os.path.isfile(path):
+            # Converted by an earlier run whose index.html was not written:
+            # point the manifest at the WebP rather than at a missing file.
+            if name != hero_name and os.path.isfile(os.path.join(assetdir, webp)):
+                slim[uuid] = {"mime": "image/webp", "url": "%s/%s" % (prefix, webp)}
+                notes.append("%s: already converted -> %s" % (name, webp))
+            continue
+        im = Image.open(path)
+        im.load()
+        if name == hero_name:
+            rgb = im.convert("RGB")
+            for w in HERO_WIDTHS:
+                dest = os.path.join(assetdir, hero_variant(name, w))
+                if not os.path.exists(dest):
+                    v = rgb if rgb.width <= w else rgb.resize(
+                        (w, round(rgb.height * w / rgb.width)), Image.LANCZOS)
+                    v.save(dest, "WEBP", quality=WEBP_PHOTO_Q, method=6)
+                    notes.append("%s: %dpx WebP %.0f KB" % (name, v.width, os.path.getsize(dest) / 1e3))
+            if max(im.size) > HERO_MAX_EDGE:
+                before = os.path.getsize(path)
+                rgb.thumbnail((HERO_MAX_EDGE, HERO_MAX_EDGE), Image.LANCZOS)
+                rgb.save(path, "JPEG", quality=85, optimize=True, progressive=True)
+                notes.append("%s: JPEG fallback capped at %dpx (%.0f -> %.0f KB)"
+                             % (name, HERO_MAX_EDGE, before / 1e3, os.path.getsize(path) / 1e3))
+            continue
+        png = e["mime"] == "image/png"
+        if png and os.path.getsize(path) < PNG_MIN_BYTES:
+            continue
+        before = os.path.getsize(path)
+        cap = LOGO_MAX_EDGE if png else (max_edge or max(im.size))
+        if max(im.size) > cap:
+            im.thumbnail((cap, cap), Image.LANCZOS)
+        if not png and im.mode != "RGB":
+            im = im.convert("RGB")
+        new = os.path.splitext(name)[0] + ".webp"
+        im.save(os.path.join(assetdir, new), "WEBP",
+                quality=WEBP_LOGO_Q if png else WEBP_PHOTO_Q, method=6)
+        os.remove(path)
+        slim[uuid] = {"mime": "image/webp", "url": "%s/%s" % (prefix, new)}
+        notes.append("%s -> %s (%.0f -> %.0f KB)" % (name, new, before / 1e3,
+                                                    os.path.getsize(os.path.join(assetdir, new)) / 1e3))
+    return notes
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -951,8 +1059,10 @@ def main():
                     help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
     ap.add_argument("--hide", default="",
                     help="comma-separated tabs to remove from the nav: %s. "
-                         "main is built with --hide live,inbox; development with none."
+                         "main is built with --hide inbox; development with none."
                          % ",".join(sorted(HIDEABLE)))
+    ap.add_argument("--strict", action="store_true",
+                    help="fail (write nothing) if any patch reports SKIPPED")
     args = ap.parse_args()
 
     hide = [t.strip() for t in args.hide.split(",") if t.strip()]
@@ -974,7 +1084,7 @@ def main():
         html = html.replace(ZOOM_FROM, ZOOM_TO)
         print("zoom patch  : applied")
     else:
-        print("zoom patch  : SKIPPED — wrapper style not found (Claude Design markup changed?)")
+        skip("zoom patch  : SKIPPED — wrapper style not found (Claude Design markup changed?)")
 
     # ── Nav blur ─────────────────────────────────────────────────────────────
     if BLUR_TO in html:
@@ -985,7 +1095,7 @@ def main():
         html = html.replace(BLUR_FROM, BLUR_TO)
         print("nav blur     : removed (all tabs)")
     else:
-        print("nav blur     : SKIPPED — navBlur binding not found")
+        skip("nav blur     : SKIPPED — navBlur binding not found")
 
     # ── Nav background gradient ──────────────────────────────────────────────
     if NAVBG_TO in html:
@@ -994,7 +1104,7 @@ def main():
         html = html.replace(NAVBG_FROM, NAVBG_TO)
         print("nav gradient : applied")
     else:
-        print("nav gradient : SKIPPED — navBg binding not found")
+        skip("nav gradient : SKIPPED — navBg binding not found")
 
     # ── About page snap (native off; about-snap.js takes over) ───────────────
     if SNAP_TO in html:
@@ -1006,17 +1116,22 @@ def main():
         html = html.replace(SNAP_FROM, SNAP_TO)
         print("about snap   : native off, about-snap.js drives it")
     else:
-        print("about snap   : SKIPPED — scroll-snap-type not found")
+        skip("about snap   : SKIPPED — scroll-snap-type not found")
 
     # ── DarylOS: house style + resizable windows ─────────────────────────────
     dos_done = dos_already = 0
+    # content_patches adds accessibility attributes inside markup these
+    # patches wrote; ignore them when checking for an already-applied patch.
+    html_cmp = html.replace(content_patches.CLOSE_ATTRS_ESCAPED, "")
     for label, frm, to, want in DARYLOS:
         n = html.count(frm)
-        if n == want:
+        # `to` first: some patches append to their anchor (to contains frm),
+        # and checking n first re-applied those on every rebuild.
+        if to in html or to in html_cmp:
+            dos_already += 1
+        elif n == want:
             html = html.replace(frm, to)
             dos_done += 1
-        elif n == 0 and to in html:
-            dos_already += 1
         else:
             sys.exit("ERROR: darylos patch %r matched %d (want %d)"
                      % (label, n, want))
@@ -1034,7 +1149,7 @@ def main():
         html = html.replace(A11Y_ROW_FROM, A11Y_ROW_TO)
         print("a11y rows    : tabindex + role on company rows")
     else:
-        print("a11y rows    : SKIPPED — row markup not found")
+        skip("a11y rows    : SKIPPED — row markup not found")
 
     # ── Book spine fitting ───────────────────────────────────────────────────
     if SPINE_TO in html:
@@ -1043,52 +1158,46 @@ def main():
         html = html.replace(SPINE_FROM, SPINE_TO)
         print("spine fit    : applied")
     else:
-        print("spine fit    : SKIPPED — shelfBooks map not found")
+        skip("spine fit    : SKIPPED — shelfBooks map not found")
 
     # ── Link preview meta ────────────────────────────────────────────────────
-    if SOCIAL_MARK in html:
+    block = social_block(args.card_version)
+    if not os.path.isfile(os.path.join(os.path.abspath(args.out), SOCIAL_IMAGE)):
+        skip("link preview : SKIPPED — %s missing at the site root" % SOCIAL_IMAGE)
+    elif block in html:
         print("link preview : already present")
+    elif SOCIAL_MARK in html:
+        # Rebuild: swap the old block for the current one (copy may have
+        # changed). Builds before SOCIAL_END existed end at the touch icon.
+        old = re.escape("  " + SOCIAL_MARK) + r".*?(?:%s|%s)" % (
+            re.escape(SOCIAL_END), re.escape('<link rel="apple-touch-icon" href="favicon.png">'))
+        html = re.sub(old, lambda m: block, html, count=1, flags=re.S)
+        print("link preview : refreshed (card v%d)" % args.card_version)
     else:
         m = re.search(r"</title>", html)
         if not m:
-            print("link preview : SKIPPED — no <title> in the outer head")
-        elif not os.path.isfile(os.path.join(os.path.abspath(args.out), SOCIAL_IMAGE)):
-            print("link preview : SKIPPED — %s missing at the site root" % SOCIAL_IMAGE)
+            skip("link preview : SKIPPED — no <title> in the outer head")
         else:
-            html = html[:m.end()] + "\n" + social_block(args.card_version) + html[m.end():]
+            html = html[:m.end()] + "\n" + block + html[m.end():]
             print("link preview : meta added (card v%d)" % args.card_version)
 
-    # ── The Valley ───────────────────────────────────────────────────────────
-    if VALLEY_SCRIPT in html:
-        print("the valley   : already wired")
-    elif not os.path.isfile(os.path.join(os.path.abspath(args.out), "valley.js")):
-        print("the valley   : SKIPPED — valley.js missing at the site root")
-    else:
-        m = re.search(r"</title>", html)
-        if not m:
-            print("the valley   : SKIPPED — no <title> to anchor to")
+    # ── Loose scripts (outer head) ───────────────────────────────────────────
+    # Remove whatever an earlier build injected, then insert the current set:
+    # each file independently, so deleting one never drops the others.
+    html = re.sub(SCRIPT_TAG_RE, "", html)
+    tags, missing = [], []
+    for name, deferred in SCRIPTS:
+        if os.path.isfile(os.path.join(os.path.abspath(args.out), name)):
+            tags.append('  <script%s src="%s"></script>' % (" defer" if deferred else "", name))
         else:
-            extra = VALLEY_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "loading.js")):
-                extra = LOADING_SCRIPT + "\n" + extra    # must load first
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "hero-parallax.js")):
-                extra += "\n" + PARALLAX_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "about-snap.js")):
-                extra += "\n" + SNAP_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "nav-frost.js")):
-                extra += "\n" + FROST_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "a11y.js")):
-                extra += "\n" + A11Y_SCRIPT
-            if os.path.isfile(os.path.join(os.path.abspath(args.out), "watching.js")):
-                extra += "\n" + WATCHING_SCRIPT
-            html = html[:m.end()] + "\n" + extra + html[m.end():]
-            print("scripts      : valley%s%s%s%s%s%s"
-                  % (" + loading" if LOADING_SCRIPT in extra else "",
-                     " + parallax" if PARALLAX_SCRIPT in extra else "",
-                     " + snap" if SNAP_SCRIPT in extra else "",
-                     " + frost" if FROST_SCRIPT in extra else "",
-                     " + a11y" if A11Y_SCRIPT in extra else "",
-                     " + watching" if WATCHING_SCRIPT in extra else ""))
+            missing.append(name)
+    m = re.search(r"</title>", html)
+    if not m:
+        skip("scripts      : SKIPPED — no <title> to anchor to")
+    elif tags:
+        html = html[:m.end()] + "\n" + "\n".join(tags) + html[m.end():]
+        print("scripts      : %d injected (all but loading.js deferred)%s"
+              % (len(tags), "; not found: " + ", ".join(missing) if missing else ""))
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
@@ -1099,7 +1208,7 @@ def main():
             html = html.replace(frm, to, 1)
             ln += 1
         else:
-            print("lang attr    : SKIPPED — an <html> tag did not match")
+            skip("lang attr    : SKIPPED — an <html> tag did not match")
     print("lang attr    : %d of %d html tags tagged" % (ln, len(LANG)))
 
     # ── Emoji favicon ────────────────────────────────────────────────────────
@@ -1107,13 +1216,18 @@ def main():
     print("emoji icon   : removed" if en else "emoji icon   : none present")
 
     # ── Noscript ─────────────────────────────────────────────────────────────
+    old_card = re.compile(r'(<noscript>\s*<style>[^<]*</style>\s*)'
+                          r'(<div style="position:fixed;inset:0;.*?\n    </div>)(\s*</noscript>)', re.S)
     if NOSCRIPT_TO in html:
         print("noscript     : already patched")
     elif NOSCRIPT_FROM in html:
         html = html.replace(NOSCRIPT_FROM, NOSCRIPT_TO, 1)
         print("noscript     : real content added")
+    elif old_card.search(html):
+        html = old_card.sub(lambda m: m.group(1) + NOSCRIPT_TO + m.group(3), html, count=1)
+        print("noscript     : card refreshed")
     else:
-        print("noscript     : SKIPPED — stock notice not found")
+        skip("noscript     : SKIPPED — stock notice not found")
 
     # ── Rotating headline word ───────────────────────────────────────────────
     rn = 0
@@ -1126,7 +1240,7 @@ def main():
             html = html.replace(frm, to)
             rn += 1
         else:
-            print("word cycle   : SKIPPED — %r not found" % frm[:30])
+            skip("word cycle   : SKIPPED — %r not found" % frm[:30])
     print("word cycle   : %d of %d values retimed" % (rn, len(ROTATION)))
 
     # ── Gradient-text descenders ─────────────────────────────────────────────
@@ -1138,7 +1252,7 @@ def main():
             html = html.replace(frm, to)
             dn += 1
         else:
-            print("descenders   : SKIPPED — a gradient-text padding not found")
+            skip("descenders   : SKIPPED — a gradient-text padding not found")
     print("descenders   : %d of %d gradient texts un-clipped" % (dn, len(DESCENDERS)))
 
     # ── Recently: gold the Apple entry ───────────────────────────────────────
@@ -1153,7 +1267,7 @@ def main():
             html = html.replace(frm, to)
             gn += 1
         else:
-            print("recently    : SKIPPED — %r not found" % frm[:40])
+            skip("recently    : SKIPPED — %r not found" % frm[:40])
     print("recently    : %d of %d entries golded" % (gn, len(RECENTLY)))
 
     # ── Bottom padding of scrolling pages ────────────────────────────────────
@@ -1165,7 +1279,7 @@ def main():
             html = html.replace(frm, to)
             done += 1
         else:
-            print("bottom pad   : SKIPPED — %s not found" % frm.split(":")[0])
+            skip("bottom pad   : SKIPPED — %s not found" % frm.split(":")[0])
     print("bottom pad   : %d of %d sections trimmed" % (done, len(PADS)))
 
     # ── Phone nav layout ─────────────────────────────────────────────────────
@@ -1177,7 +1291,7 @@ def main():
         html = html.replace(NAV_CSS_ANCHOR, NAV_CSS + NAV_CSS_ANCHOR)
         print("phone nav   : patched")
     else:
-        print("phone nav   : SKIPPED — stylesheet anchor not found")
+        skip("phone nav   : SKIPPED — stylesheet anchor not found")
 
     # ── Hidden sections ──────────────────────────────────────────────────────
     if hide:
@@ -1185,11 +1299,16 @@ def main():
             frm, to = HIDEABLE[tab]
             if frm in html:
                 html = html.replace(frm, to, 1)
+            elif frm.strip(", ") not in html:
+                pass                        # already hidden by an earlier build
             else:
                 sys.exit("ERROR: --hide %s could not find its nav entry; the "
                          "export's tabDefs changed and this patch needs updating." % tab)
         keep = [t for t in ["home", "meanwhile", "work", "live", "inbox"] if t not in hide]
-        if KEY_ORDER_FROM not in html:
+        want_order = KEY_ORDER_FMT % ", ".join('\\"%s\\"' % t for t in keep)
+        if want_order in html:
+            pass                            # already reordered
+        elif KEY_ORDER_FROM not in html:
             sys.exit("ERROR: --hide could not find the arrow-key order; hidden "
                      "tabs would stay reachable by keyboard.")
         html = html.replace(
@@ -1200,19 +1319,9 @@ def main():
         print("hidden tabs  : none — full site")
 
     # ── Parse bundle sections ────────────────────────────────────────────────
-    man_m = section(html, "manifest")
-    manifest = json.loads(man_m.group(1))
-    ext_m = section(html, "ext_resources")
-    id2uuid = {e["id"]: e["uuid"] for e in json.loads(ext_m.group(1))}
-    tmpl_m = section(html, "template")
-    template = tmpl_m.group(1)
-
-    # The hero photograph fills the frame edge to edge and is the one image
-    # worth its native resolution; everything else renders in a column or tile
-    # where --max-edge leaves ample hi-dpi headroom. The template's own
-    # og:image (authored in Claude Design) points at the hero, so use that.
-    hm = re.search(r'og:image[^>]*?assets/([A-Za-z0-9._-]+' + chr(92) + '.jpe?g)', template)
-    hero_name = hm.group(1) if hm else None
+    manifest = json.loads(section(html, "manifest").group(1))
+    id2uuid = {e["id"]: e["uuid"] for e in json.loads(section(html, "ext_resources").group(1))}
+    template = section(html, "template").group(1)
 
     pages = json.loads(section(html, "page_order").group(1))
     if pages:
@@ -1224,16 +1333,70 @@ def main():
         r'\(window\.__resources\|\|\{\}\)\.(res\d+)\|\|\\"assets/([^"\\]+)', template))
     uuid2name = {id2uuid[rid]: nm for rid, nm in fallback.items() if rid in id2uuid}
 
+    # A built index.html has no inlined data left. There is nothing to
+    # extract, and wiping assets/ would delete the only copy of every file.
+    built = not any("data" in e for e in manifest.values())
+
+    # The hero photograph fills the frame edge to edge. An export names it in
+    # the template's og:image (authored in Claude Design); a build records it
+    # in a marker, because content_patches points og:image at the social card.
+    hm = re.search(r'og:image[^>]*?assets/([A-Za-z0-9._-]+' + chr(92) + '.jpe?g)', template)
+    hero_name = hm.group(1) if hm else None
+    if not hero_name:
+        mm = re.search(HERO_MARK_RE, html)
+        hero_name = mm.group(1) if mm else None
+    if not hero_name:
+        skip("hero         : SKIPPED — could not identify the hero image")
+    hero_uuid = None
+    for u, e in manifest.items():
+        nm = e["url"].rsplit("/", 1)[-1] if "url" in e else safe_name(uuid2name.get(u, ""))
+        if hero_name and nm == hero_name:
+            hero_uuid = u
+
+    # ── Template patches (content_patches.py) ────────────────────────────────
+    tmpl_m = section(html, "template")
+    raw_t = tmpl_m.group(1)
+    lead, core = raw_t[:len(raw_t) - len(raw_t.lstrip())], raw_t.strip()
+    trail = raw_t[len(raw_t.rstrip()):]
+    srcset = (", ".join("%s/%s %dw" % (args.assets, hero_variant(hero_name, w), w)
+                        for w in HERO_WIDTHS) if hero_name else None)
+    text, patched = content_patches.apply(
+        content_patches.decode(core), hero_uuid=hero_uuid, hero_srcset=srcset,
+        covers_dir=os.path.join(os.path.abspath(args.out), "covers"),
+        social_image="%s/%s?v=%d" % (SITE_URL, SOCIAL_IMAGE, args.card_version))
+    html = (html[:tmpl_m.start(1)] + lead + content_patches.encode(text) + trail
+            + html[tmpl_m.end(1):])
+    print("content      : %d applied, %d already present"
+          % (len(patched.applied), len(patched.already)))
+    for problem in patched.problems:
+        skip("content      : SKIPPED — " + problem)
+
+    # Props edited in Claude Design ship in the public bundle. A token or key
+    # with a non-empty default is a leaked secret, so refuse to build.
+    for m in re.finditer(r'&quot;(\w*(?:[Tt]oken|[Ss]ecret|[Aa]pi[Kk]ey)\w*)&quot;:\{[^}]*?'
+                         r'&quot;default&quot;:&quot;(?!&quot;)', html):
+        sys.exit("ERROR: Claude Design prop %r has a non-empty default; it would be "
+                 "published in index.html. Clear it before building." % m.group(1))
+
+    # Fail before anything on disk changes: the steps below rewrite assets/.
+    if args.strict and SKIPS:
+        sys.exit("ERROR: --strict and %d patch(es) were skipped; nothing written:\n  %s"
+                 % (len(SKIPS), "\n  ".join(SKIPS)))
+
     outdir = os.path.abspath(args.out)
     assetdir = os.path.join(outdir, args.assets)
-    if os.path.isdir(assetdir):
-        shutil.rmtree(assetdir)          # stale assets from a previous export
-    os.makedirs(assetdir, exist_ok=True)
-
     slim, used, saved_bytes, notes = {}, set(), 0, []
     total_raw = 0
 
-    for uuid, entry in sorted(manifest.items()):
+    if built:
+        slim = dict(manifest)
+        print("assets       : already extracted (rebuilding a built index.html)")
+    else:
+        if os.path.isdir(assetdir):
+            shutil.rmtree(assetdir)      # stale assets from a previous export
+        os.makedirs(assetdir, exist_ok=True)
+
+    for uuid, entry in ([] if built else sorted(manifest.items())):
         if "data" not in entry:
             slim[uuid] = entry           # already externalized
             continue
@@ -1244,7 +1407,7 @@ def main():
 
         mime = entry["mime"]
         # The filename is decided before recompression so the hero can be
-        # exempted from downscaling by name.
+        # treated differently by name.
         name = uuid2name.get(uuid) or (uuid + EXT_BY_MIME.get(mime, ".bin"))
         name = safe_name(name)
         stem, ext = os.path.splitext(name)
@@ -1254,43 +1417,69 @@ def main():
             n += 1
         used.add(name)
 
-        if mime == "image/jpeg" and not args.no_recompress:
-            cap = None if name == hero_name else (args.max_edge or None)
-            raw, why = recompress_jpeg(raw, args.quality, cap)
+        # Other photos are written as-is: optimize_assets() below turns them
+        # into WebP straight from the original, avoiding a JPEG generation.
+        if mime == "image/jpeg" and name == hero_name and not args.no_recompress:
+            raw, why = recompress_jpeg(raw, args.quality)
             if why:
                 notes.append("%s: %s" % (name, why))
         saved_bytes += before - len(raw)
-        total_raw += len(raw)
 
         with open(os.path.join(assetdir, name), "wb") as fh:
             fh.write(raw)
         slim[uuid] = {"mime": mime, "url": "%s/%s" % (args.assets, name)}
 
+    if not args.no_recompress:
+        notes += optimize_assets(slim, assetdir, args.assets, hero_name, args.max_edge)
+    total_raw = sum(os.path.getsize(os.path.join(outdir, e["url"]))
+                    for e in slim.values() if os.path.isfile(os.path.join(outdir, e.get("url", ""))))
+
     # ── Rewrite manifest + runtime ───────────────────────────────────────────
     slim_json = json.dumps(slim, indent=None, sort_keys=True)
     if "</script>" in slim_json:
         sys.exit("ERROR: manifest JSON would break out of its script tag")
+    man_m = section(html, "manifest")
     html = html[:man_m.start(1)] + "\n" + slim_json + "\n" + html[man_m.end(1):]
 
-    # Preload the hero: the boot cover lifts after ~900ms, and on a slow
-    # connection the hero used to start downloading only once the runtime
-    # mounted the <img>. A preload in the outer head starts the fetch with the
-    # first bytes of the page, so the reveal never catches a half-loaded hero.
+    # ── Preloads (outer head) ────────────────────────────────────────────────
+    # Everything the first paint waits on, fetched with the first bytes of the
+    # page instead of being discovered one step at a time (HTML -> unpack ->
+    # runtime -> React -> mount -> hero/fonts):
+    #   - the hero, at the size this screen will use (imagesrcset)
+    #   - the DC runtime and React, which load in sequence otherwise
+    #   - the latin subsets of the fonts the home view draws with
     # This runs AFTER the manifest rewrite above: that splice uses match
     # offsets captured earlier, and inserting into html before it would shift
     # them (learned the hard way — the first attempt corrupted the bundle).
+    head_end = html.index("</head>")
+    head = re.sub(r'\n[ \t]*<link rel="preload"[^>]*>', "", html[:head_end])
+    head = re.sub(r'\n[ \t]*' + HERO_MARK_RE, "", head)
+    lines = []
     if hero_name:
-        preload = ('\n  <link rel="preload" as="image" href="assets/%s">'
-                   % hero_name)
-        if preload in html:
-            print("hero preload : already present")
-        else:
-            tm = re.search(r"</title>", html)
-            if tm:
-                html = html[:tm.end()] + preload + html[tm.end():]
-                print("hero preload : %s" % hero_name)
-            else:
-                print("hero preload : SKIPPED — no <title> anchor")
+        lines.append("  <!-- [build.py] hero: %s -->" % hero_name)
+        lines.append('  <link rel="preload" as="image" href="%s/%s" imagesrcset="%s" '
+                     'imagesizes="100vw" fetchpriority="high">' % (args.assets, hero_name, srcset))
+    url_of = lambda u: slim.get(u, {}).get("url")
+    rt = re.search(r'<script src="([0-9a-f-]{36})">', text)
+    for u in ([rt.group(1)] if rt else []) + [v for k, v in id2uuid.items() if "react" in k]:
+        if url_of(u):
+            lines.append('  <link rel="preload" as="script" href="%s">' % url_of(u))
+    for fam, style, u, rng in re.findall(
+            r"@font-face \{\s*font-family: '([^']+)';\s*font-style: (\w+);[^}]*?"
+            r'src: url\("([0-9a-f-]{36})"\)[^}]*?unicode-range: ([^;]+);', text):
+        if (fam, style) in PRELOAD_FONTS and rng.startswith("U+0000-00FF") and url_of(u):
+            lines.append('  <link rel="preload" as="font" type="font/woff2" href="%s" crossorigin>'
+                         % url_of(u))
+    # After the viewport meta (inside the link-preview block): a preload's
+    # imagesrcset is resolved when it is parsed, and before the viewport meta
+    # a phone is still laid out 980px wide — it would fetch the 1920px hero.
+    tm = re.search(re.escape(SOCIAL_END), head) or re.search(r"</title>", head)
+    if tm:
+        head = head[:tm.end()] + "\n" + "\n".join(lines) + head[tm.end():]
+        print("preloads     : %d (hero, runtime/React, fonts)" % len(lines))
+    else:
+        skip("preloads     : SKIPPED — no <title> anchor")
+    html = head + html[head_end:]
 
     if RUNTIME_TO in html:
         print("runtime     : already patched")
@@ -1319,11 +1508,25 @@ def main():
         sys.exit("ERROR: template contains a literal '</' — it would terminate "
                  "its own <script> tag. Escape it as '<\\\\u002F'.")
 
+    if args.strict and SKIPS:
+        sys.exit("ERROR: --strict and %d patch(es) were skipped; nothing written:\n  %s"
+                 % (len(SKIPS), "\n  ".join(SKIPS)))
+
     index = os.path.join(outdir, "index.html")
     with open(index, "w", encoding="utf-8", newline="") as fh:
         fh.write(html)
 
+    # The sitemap's lastmod was edited by hand and drifted; stamp it.
+    sitemap = os.path.join(outdir, "sitemap.xml")
+    if os.path.isfile(sitemap):
+        xml = open(sitemap, encoding="utf-8").read()
+        xml = re.sub(r"<lastmod>[^<]*</lastmod>", "<lastmod>%s</lastmod>" % date.today().isoformat(), xml)
+        with open(sitemap, "w", encoding="utf-8") as fh:
+            fh.write(xml)
+
     new_size = len(html.encode("utf-8"))
+    if SKIPS:
+        print("\n%d patch(es) SKIPPED — rerun with --strict to make this fatal." % len(SKIPS))
     print("\nassets      : %d files, %.2f MB in %s/" % (len(slim), total_raw / 1e6, args.assets))
     if saved_bytes:
         print("recompressed: saved %.2f MB" % (saved_bytes / 1e6))

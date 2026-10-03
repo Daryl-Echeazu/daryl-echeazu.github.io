@@ -137,7 +137,9 @@
   // Rendered means the app has resolved its bindings — not merely that the
   // template has been swapped in, which is the state that shows "{{ t.label }}".
   function rendered() {
-    var h = document.querySelector("h1, h2");
+    // DarylOS has no heading; with #os links it can be the first view, so the
+    // nav (whose tab labels are bindings too) stands in for one.
+    var h = document.querySelector("h1, h2") || document.querySelector('[role="navigation"]');
     if (!h || h.textContent.indexOf("{{") !== -1) return false;
     if (document.querySelectorAll("a").length < 4) return false;   // nav present
     var img = document.querySelector('img[style*="object-fit: cover"]');
