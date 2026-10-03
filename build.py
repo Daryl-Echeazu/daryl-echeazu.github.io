@@ -738,9 +738,9 @@ PADS = [
 # `development` restores them by simply not passing the flag.
 #
 # Keyed by the tab id the app uses internally, not the label.
-HIDEABLE = {
-    "live":  ('[\\"live\\", \\"DarylOS\\"], ', ""),
-    "inbox": (', [\\"inbox\\", \\"INBOX\\"]', ""),
+HIDEABLE = {              # the tab's entry in tabDefs (JSON-escaped)
+    "live":  '[\\"live\\", \\"DarylOS\\"]',
+    "inbox": '[\\"inbox\\", \\"INBOX\\"]',
 }
 # The arrow-key walk is a separate list and has to agree with the nav, or the
 # hidden pages stay one keypress away.
@@ -1059,7 +1059,7 @@ def main():
                     help="bump when social-preview.jpg changes; busts Discord/iMessage caches")
     ap.add_argument("--hide", default="",
                     help="comma-separated tabs to remove from the nav: %s. "
-                         "main is built with --hide inbox; development with none."
+                         "main is built with --hide live,inbox; development with none."
                          % ",".join(sorted(HIDEABLE)))
     ap.add_argument("--strict", action="store_true",
                     help="fail (write nothing) if any patch reports SKIPPED")
@@ -1296,24 +1296,30 @@ def main():
     # ── Hidden sections ──────────────────────────────────────────────────────
     if hide:
         for tab in hide:
-            frm, to = HIDEABLE[tab]
-            if frm in html:
-                html = html.replace(frm, to, 1)
-            elif frm.strip(", ") not in html:
-                pass                        # already hidden by an earlier build
+            entry = HIDEABLE[tab]
+            # Remove the entry with whichever separator it has: ", " before it
+            # if it is last in the list, after it otherwise.
+            for frm in (", " + entry, entry + ", "):
+                if frm in html:
+                    html = html.replace(frm, "", 1)
+                    break
             else:
+                if entry not in html:
+                    continue                # already hidden by an earlier build
                 sys.exit("ERROR: --hide %s could not find its nav entry; the "
                          "export's tabDefs changed and this patch needs updating." % tab)
         keep = [t for t in ["home", "meanwhile", "work", "live", "inbox"] if t not in hide]
         want_order = KEY_ORDER_FMT % ", ".join('\\"%s\\"' % t for t in keep)
+        # Match any order list, not just the export's: a built file already
+        # has one rewritten by an earlier --hide.
+        order_re = r'const order = \[(?:\\"[a-z]+\\"(?:, )?)+\];'
         if want_order in html:
             pass                            # already reordered
-        elif KEY_ORDER_FROM not in html:
+        elif len(re.findall(order_re, html)) != 1:
             sys.exit("ERROR: --hide could not find the arrow-key order; hidden "
                      "tabs would stay reachable by keyboard.")
-        html = html.replace(
-            KEY_ORDER_FROM,
-            KEY_ORDER_FMT % ", ".join('\\"%s\\"' % t for t in keep), 1)
+        else:
+            html = re.sub(order_re, lambda m: want_order, html, count=1)
         print("hidden tabs  : %s (nav + arrow keys)" % ", ".join(hide))
     else:
         print("hidden tabs  : none — full site")

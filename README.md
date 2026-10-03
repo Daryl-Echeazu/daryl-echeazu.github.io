@@ -18,7 +18,7 @@ From a new Claude Design export:
 
 ```sh
 # main — the public site
-python3 build.py ~/Downloads/"index (1).html" --out . --hide inbox --strict
+python3 build.py ~/Downloads/"index (1).html" --out . --hide live,inbox --strict
 
 # development — everything, including work in progress
 python3 build.py ~/Downloads/"index (1).html" --out . --strict
@@ -28,7 +28,7 @@ Or, to apply a change to `build.py` / `content_patches.py` without a new
 export, rebuild the built file in place (it only applies what is missing):
 
 ```sh
-python3 build.py index.html --out . --hide inbox --strict
+python3 build.py index.html --out . --hide live,inbox --strict
 ```
 
 `--strict` stops the build and writes nothing if any patch can't find its
@@ -51,8 +51,9 @@ Commit and push; Pages redeploys in under a minute.
 ## Notes
 
 `main` is what the public sees. `development` is the working branch and is not
-served. **`--hide inbox` is the only thing keeping the Inbox off the live
-site.** If `main` is rebuilt without it, the Inbox goes public. Without a
+served. **`--hide live,inbox` is the only thing keeping DarylOS and the Inbox
+off the live site** (hidden Oct 2026). If `main` is rebuilt without it, they go
+public. Without a
 `formEndpoint` set in Claude Design, the Inbox now opens the visitor's mail
 app instead of pretending to send.
 
