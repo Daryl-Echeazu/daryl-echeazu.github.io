@@ -343,6 +343,15 @@ EXTRA_CSS = '''
   div[role="button"][title]:focus-visible { outline: 2px solid oklch(0.78 0.14 78); outline-offset: 3px; }'''
 
 
+# Wide-viewport zoom, only where calc() can divide by a length (see ZOOM_TO
+# in build.py). Elsewhere --z stays 1: the 1280px layout, unscaled.
+ZOOM_CSS = """
+  /* [build.py] content_patches: wide-screen zoom, where supported. */
+  @supports (width: calc(100vw / 1280px * 1px)) {
+    [style*='--z: 1; zoom: var(--z)'] { --z: clamp(1, calc(100vw / 1280px), 1.35) !important; }
+  }"""
+
+
 def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=None):
     """Patch the decoded template. Returns (text, Patcher) for reporting."""
     p = Patcher(text)
@@ -358,6 +367,10 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
     # The window close control is a <span>; give it a role, focus and a name.
     p.resub("close buttons", r'<span (sc-camel-on-click="\{\{ w\.close \}\}")',
             r'<span ' + CLOSE_ATTRS + r'\1', CLOSE_ATTRS + 'sc-camel-on-click')
+    if ZOOM_CSS in p.text:
+        p.already.append("zoom css")
+    else:
+        p.sub("zoom css", EXTRA_CSS_ANCHOR, ZOOM_CSS + EXTRA_CSS_ANCHOR)
     # build.py's own CSS goes in at the same anchor, so check for the block
     # itself rather than block-plus-anchor.
     if EXTRA_CSS in p.text:

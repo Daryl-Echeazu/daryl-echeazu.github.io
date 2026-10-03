@@ -72,10 +72,20 @@ def skip(msg):
 # don't get comically large text.
 ZOOM_FROM = ("font-size: 16px; line-height: 1.6; "
              "height: 100vh; overflow: hidden; position: relative;")
+#
+# Firefox (and Zen) don't support dividing a length by a length, so the
+# calc() below is invalid there; inline, that made --z invalid, the height
+# calc invalid with it, and the wrapper collapsed to 0px tall: a blank black
+# page. So --z defaults to 1 inline, and content_patches.ZOOM_CSS raises it
+# only where @supports says the division works.
 ZOOM_TO = ("font-size: 16px; line-height: 1.6; "
-           "--z: clamp(1, calc(100vw / 1280px), 1.35); zoom: var(--z); "
+           "--z: 1; zoom: var(--z); "
            "height: calc(100vh / var(--z)); height: calc(100dvh / var(--z)); "
            "overflow: hidden; position: relative;")
+ZOOM_TO_V1 = ("font-size: 16px; line-height: 1.6; "
+              "--z: clamp(1, calc(100vw / 1280px), 1.35); zoom: var(--z); "
+              "height: calc(100vh / var(--z)); height: calc(100dvh / var(--z)); "
+              "overflow: hidden; position: relative;")
 # The dvh line is not a nicety. On iOS Safari 100vh is the LARGE viewport — it
 # includes the strip behind the bottom toolbar — while the page is only ever
 # painted in the smaller visible area. With body { overflow: hidden } and a
@@ -1076,7 +1086,10 @@ def main():
     original_size = len(html.encode("utf-8"))
 
     # ── Zoom patch ───────────────────────────────────────────────────────────
-    if ZOOM_TO in html:
+    if ZOOM_TO_V1 in html:
+        html = html.replace(ZOOM_TO_V1, ZOOM_TO)
+        print("zoom patch  : upgraded (Firefox-safe)")
+    elif ZOOM_TO in html:
         print("zoom patch  : already present")
     elif ZOOM_FROM in html:
         if html.count(ZOOM_FROM) != 1:
