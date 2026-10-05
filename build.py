@@ -196,6 +196,7 @@ SPINE_TO = (
 #   about-snap.js, nav-frost.js   see sections 3 and 3b.
 #   a11y.js           section 14 (Enter/Space on role=button elements).
 #   watching.js       the watching.txt window's hand-editable watching.json.
+#   stacks-motion.js  The Stacks' hover still -> official-trailer clip.
 SCRIPTS = [               # (file, defer) — order is execution order
     ("loading.js", False),
     ("valley.js", True),
@@ -204,6 +205,7 @@ SCRIPTS = [               # (file, defer) — order is execution order
     ("nav-frost.js", True),
     ("a11y.js", True),
     ("watching.js", True),
+    ("stacks-motion.js", True),   # The Stacks: banner still -> trailer clip
 ]
 SCRIPT_TAG_RE = r'\n?[ \t]*<script(?: defer)? src="(?:%s)"></script>' % "|".join(
     re.escape(f) for f, _ in SCRIPTS)

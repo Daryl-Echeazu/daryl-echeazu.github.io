@@ -10,6 +10,10 @@ first-time visitor hovering a spine waited on a third-party round trip — up to
 resolves all the MyAnimeList ids in one GraphQL request. With the files local, build.py points the shelf
 at covers/ and preloads them, and hovering is instant.
 
+Also fetches each anime's official banner art (banner-mal-<id>.webp) and
+writes covers/scenes.json — {title: {banner, trailer}} — which stacks-motion.js
+uses for the hover still and the official-trailer clip.
+
 Reads the ISBNs and MyAnimeList ids from the built index.html (or an export),
 so new books added in Claude Design are picked up by re-running this.
 
@@ -54,32 +58,32 @@ def get(url, tries=3):
     return None
 
 
-def anilist_covers(mal_ids):
-    """{mal_id: cover url} for every id AniList knows, in one request."""
-    fields = " ".join("m%d: Media(idMal: %d, type: ANIME) { coverImage { extraLarge large } }" % (i, i)
-                      for i in mal_ids)
+def anilist_media(mal_ids):
+    """{mal_id: AniList media} — cover, banner, trailer — in one request."""
+    fields = " ".join("m%d: Media(idMal: %d, type: ANIME) { coverImage { extraLarge large } "
+                      "bannerImage trailer { id site } }" % (i, i) for i in mal_ids)
     req = urllib.request.Request(
         "https://graphql.anilist.co",
         data=json.dumps({"query": "{ %s }" % fields}).encode(),
         headers=dict(UA, **{"Content-Type": "application/json", "Accept": "application/json"}))
     with urllib.request.urlopen(req, timeout=60) as r:
         data = json.loads(r.read())["data"]
-    out = {}
-    for i in mal_ids:
-        media = data.get("m%d" % i)
-        if media and media.get("coverImage"):
-            out[i] = media["coverImage"].get("extraLarge") or media["coverImage"].get("large")
-    return out
+    return {i: data["m%d" % i] for i in mal_ids if data.get("m%d" % i)}
 
 
-def save_webp(raw, dest):
+def cover_url(media):
+    c = (media or {}).get("coverImage") or {}
+    return c.get("extraLarge") or c.get("large")
+
+
+def save_webp(raw, dest, max_h=MAX_H, quality=QUALITY):
     im = Image.open(io.BytesIO(raw))
     im.load()
     if im.mode not in ("RGB", "RGBA"):
         im = im.convert("RGB")
-    if im.height > MAX_H:
-        im = im.resize((round(im.width * MAX_H / im.height), MAX_H), Image.LANCZOS)
-    im.save(dest, "WEBP", quality=QUALITY, method=6)
+    if im.height > max_h:
+        im = im.resize((round(im.width * max_h / im.height), max_h), Image.LANCZOS)
+    im.save(dest, "WEBP", quality=quality, method=6)
     return im.size
 
 
@@ -94,16 +98,16 @@ def main():
     t = template_text(args.source)
     isbns = sorted(set(re.findall(r'covers\.openlibrary\.org/b/isbn/(\d+)-L\.jpg', t)))
     mal = re.search(r'shelfMalIds = (\{.*?\});', t)
-    mal_ids = sorted(set(int(v) for v in re.findall(r':\s*(\d+)', mal.group(1)))) if mal else []
+    titles = [(json.loads('"%s"' % k), int(v)) for k, v in re.findall(r'"((?:[^"\\]|\\.)*)":\s*(\d+)', mal.group(1))] if mal else []
+    mal_ids = sorted(set(i for _, i in titles))
     os.makedirs(args.out, exist_ok=True)
 
     jobs = [("isbn-%s.webp" % i, "https://covers.openlibrary.org/b/isbn/%s-L.jpg" % i, None)
             for i in isbns]
     jobs += [("mal-%d.webp" % i, None, i) for i in mal_ids]
+    jobs += [("banner-mal-%d.webp" % i, None, -i) for i in mal_ids]   # negative id = banner
 
-    want = [i for name, url, i in jobs
-            if i is not None and (args.force or not os.path.exists(os.path.join(args.out, name)))]
-    anime = anilist_covers(want) if want else {}
+    anime = anilist_media(mal_ids) if mal_ids else {}
 
     ok = failed = skipped = 0
     for name, url, mal_id in jobs:
@@ -112,19 +116,39 @@ def main():
             skipped += 1
             continue
         try:
+            banner = mal_id is not None and mal_id < 0
             if mal_id is not None:
-                url = anime.get(mal_id)
+                media = anime.get(abs(mal_id))
+                url = (media or {}).get("bannerImage") if banner else cover_url(media)
                 if not url:
+                    if banner:                     # not every show has a banner
+                        skipped += 1
+                        continue
                     raise ValueError("AniList has no cover for MAL id %d" % mal_id)
             raw = get(url)
             if len(raw) < 1000:                    # Open Library's 1x1 "no cover" gif
                 raise ValueError("no cover (%d bytes)" % len(raw))
-            w, h = save_webp(raw, dest)
+            # banners are panned at the frame's height (~300 CSS px)
+            w, h = save_webp(raw, dest, max_h=600, quality=72) if banner else save_webp(raw, dest)
             print("ok    %-22s %dx%d  %5.1f KB" % (name, w, h, os.path.getsize(dest) / 1e3))
             ok += 1
         except Exception as exc:
             print("FAIL  %-22s %s" % (name, exc))
             failed += 1
+
+    scenes = {}
+    for title, i in titles:
+        media = anime.get(i) or {}
+        tr = media.get("trailer") or {}
+        b = "banner-mal-%d.webp" % i
+        scenes[title] = {
+            "banner": "covers/" + b if os.path.exists(os.path.join(args.out, b)) else None,
+            "trailer": (tr.get("id") or "").strip() or None if tr.get("site") == "youtube" else None,
+        }
+    with open(os.path.join(args.out, "scenes.json"), "w", encoding="utf-8") as fh:
+        json.dump(scenes, fh, indent=1, ensure_ascii=False)
+    print("scenes.json: %d titles, %d with banners, %d with trailers" % (
+        len(scenes), sum(1 for v in scenes.values() if v["banner"]), sum(1 for v in scenes.values() if v["trailer"])))
 
     print("\n%d fetched, %d already present, %d failed -> %s/" % (ok, skipped, failed, args.out))
     if failed:
