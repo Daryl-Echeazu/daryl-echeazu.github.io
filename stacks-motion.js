@@ -7,12 +7,14 @@
  *
  *   - Nothing loads until you hover: the banner on hover (neighbours' banners
  *     are fetched next), the trailer only after DWELL ms on the same spine.
- *   - One trailer at a time, rendered large so YouTube serves HD, muted, no
+ *   - One trailer at a time, rendered large so YouTube serves HD (desktop), muted, no
  *     controls. It stays hidden until it has played WARM seconds on its own
  *     clock — past YouTube's start-up controls and any ad — and is never
  *     paused, because a resume makes YouTube redraw its play/pause/skip
  *     overlay. Moving to another spine destroys it.
- *   - Phones / no hover / data saver: the still only.
+ *   - Phones: tapping a spine selects it; if it stays selected for DWELL ms the
+ *     trailer loads the same way, rendered smaller so YouTube serves ~480p
+ *     (about a third of the data). Data saver on: the still only.
  *
  * Drawn as a fixed overlay on top of the app's cover <img>, outside React's
  * tree (and outside the zoom wrapper, so getBoundingClientRect is exact).
@@ -25,8 +27,11 @@
   var DWELL = 500;        // ms on one spine before a trailer loads
   var ZOOM = 1.4;         // crops YouTube's title bar / logo out of the frame
 
-  var canClip = window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches &&
-    !(navigator.connection && navigator.connection.saveData);
+  var canClip = !(navigator.connection && navigator.connection.saveData);
+  // YouTube picks the stream from the player's size: HD for mouse-driven
+  // screens, ~480p on touch devices (sharp at a phone-sized card).
+  var touch = !!(window.matchMedia && matchMedia("(hover: none), (pointer: coarse)").matches);
+  var PW = touch ? 854 : 1280, PH = touch ? 480 : 720;
 
   var scenes = null, ov = null, still = null, shownKey = null, active = false;
   var css = document.createElement("style");
@@ -39,7 +44,7 @@
     ".sm-pan{background-size:auto 100%;background-repeat:no-repeat;animation:smPan 14s ease-in-out infinite alternate}" +
     ".sm-zoom{background-size:cover;background-position:center;animation:smZoom 12s ease-in-out infinite alternate}" +
     ".sm-v{position:fixed;z-index:18;overflow:hidden;pointer-events:none;opacity:0;transition:opacity 1s ease}" +
-    ".sm-v>div{position:absolute;width:1280px;height:720px;transform-origin:0 0}";
+    ".sm-v>div{position:absolute;transform-origin:0 0}";
 
   function loadScenes() {
     if (scenes) return;
@@ -103,6 +108,7 @@
         box = document.createElement("div");
         box.className = "sm-v";
         var inner = document.createElement("div"), slot = document.createElement("div");
+        inner.style.width = PW + "px"; inner.style.height = PH + "px";
         inner.appendChild(slot); box.appendChild(inner); document.body.appendChild(box);
         layout();
         loadYT(function (YT) {
@@ -133,7 +139,7 @@
       box.style.left = r.left + "px"; box.style.top = r.top + "px";
       box.style.width = r.width + "px"; box.style.height = r.height + "px";
       var h = r.height * ZOOM, w = h * 16 / 9, inner = box.firstChild;
-      inner.style.transform = "scale(" + (w / 1280) + ")";
+      inner.style.transform = "scale(" + (w / PW) + ")";
       inner.style.left = (r.width - w) / 2 + "px"; inner.style.top = (r.height - h) / 2 + "px";
     }
     return { start: start, stop: stop, layout: layout };
