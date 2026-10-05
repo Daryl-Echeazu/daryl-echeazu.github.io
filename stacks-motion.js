@@ -7,17 +7,21 @@
  *
  *   - Nothing loads until you hover: the banner on hover (neighbours' banners
  *     are fetched next), the trailer only after DWELL ms on the same spine.
- *   - One trailer at a time, rendered large so YouTube serves HD (desktop), muted, no
- *     controls. It stays hidden until it has played WARM seconds on its own
- *     clock — past YouTube's start-up controls and any ad — and is never
- *     paused, because a resume makes YouTube redraw its play/pause/skip
+ *   - One trailer at a time, rendered large so YouTube serves HD (desktop),
+ *     muted, no controls. It stays hidden until it has played WARM seconds on
+ *     its own clock — past YouTube's start-up controls and any ad — and is
+ *     never paused, because a resume makes YouTube redraw its play/pause/skip
  *     overlay. Moving to another spine destroys it.
  *   - Phones: tapping a spine selects it; if it stays selected for DWELL ms the
  *     trailer loads the same way, rendered smaller so YouTube serves ~480p
  *     (about a third of the data).
  *
- * Drawn as a fixed overlay on top of the app's cover <img>, outside React's
- * tree (and outside the zoom wrapper, so getBoundingClientRect is exact).
+ * The layers live INSIDE the cover's own box (the app's position:relative
+ * scene row), placed over the <img> by its offsets. So they scroll, stick and
+ * get clipped exactly like the cover — an earlier position:fixed overlay
+ * chased the cover frame by frame, lagged on phone scrolling and spilled over
+ * the shelf and the nav. React leaves the extra child alone, and the scene
+ * card is re-keyed on every new spine, which removes it along with the card.
  * Data: covers/scenes.json, written by fetch_covers.py. Loaded in the outer
  * head; everything hangs off document/window, which survive the bundler swap.
  */
@@ -32,18 +36,22 @@
   var touch = !!(window.matchMedia && matchMedia("(hover: none), (pointer: coarse)").matches);
   var PW = touch ? 854 : 1280, PH = touch ? 480 : 720;
 
-  var scenes = null, ov = null, still = null, shownKey = null, active = false;
+  var scenes = null, ov = null, coverEl = null, shownKey = null;
   var css = document.createElement("style");
   css.textContent =
     "@keyframes smPan{from{background-position:0% 50%;transform:scale(1.04)}to{background-position:100% 50%;transform:scale(1.12)}}" +
     "@keyframes smZoom{from{transform:scale(1)}to{transform:scale(1.12) translate(-2%,-2%)}}" +
-    ".sm-ov{position:fixed;z-index:18;overflow:hidden;pointer-events:none}" +
+    // !important: the app's phone CSS styles the row's last child (padding),
+    // and this layer is appended last.
+    ".sm-ov{position:absolute!important;overflow:hidden;pointer-events:none;z-index:1;padding:0!important;margin:0!important;box-sizing:border-box!important}" +
     ".sm-l{position:absolute;inset:0;opacity:0;transition:opacity .6s ease}" +
     ".sm-l.on{opacity:1}" +
     ".sm-pan{background-size:auto 100%;background-repeat:no-repeat;animation:smPan 14s ease-in-out infinite alternate}" +
     ".sm-zoom{background-size:cover;background-position:center;animation:smZoom 12s ease-in-out infinite alternate}" +
-    ".sm-v{position:fixed;z-index:18;overflow:hidden;pointer-events:none;opacity:0;transition:opacity 1s ease}" +
+    ".sm-v{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity 1s ease}" +
     ".sm-v>div{position:absolute;transform-origin:0 0}";
+
+  var ro = window.ResizeObserver ? new ResizeObserver(function () { place(); }) : null;
 
   function loadScenes() {
     if (scenes) return;
@@ -55,10 +63,17 @@
   function coverImg() {
     var imgs = document.querySelectorAll('img[draggable="false"][alt]');
     for (var i = 0; i < imgs.length; i++) {
-      var r = imgs[i].getBoundingClientRect();
-      if (r.width > 100 && r.height > 150) return imgs[i];
+      if (imgs[i].offsetWidth > 100 && imgs[i].offsetHeight > 150) return imgs[i];
     }
     return null;
+  }
+
+  // Cover the <img> exactly, in its parent's own (zoomed) coordinates.
+  function place() {
+    if (!ov || !coverEl) return;
+    ov.style.left = coverEl.offsetLeft + "px"; ov.style.top = coverEl.offsetTop + "px";
+    ov.style.width = coverEl.offsetWidth + "px"; ov.style.height = coverEl.offsetHeight + "px";
+    Clip.layout();
   }
 
   function prefetchNeighbours(title) {
@@ -80,9 +95,9 @@
     var pre = new Image();
     pre.onload = function () { el.style.backgroundImage = "url('" + src + "')"; requestAnimationFrame(function () { el.classList.add("on"); }); };
     pre.src = src;
-    if (still) still.remove();
-    still = el;
-    ov.appendChild(el);
+    var old = ov.querySelector(".sm-l");
+    if (old) old.remove();
+    ov.insertBefore(el, ov.firstChild);
     prefetchNeighbours(title);
     Clip.start(title, s.trailer);
   }
@@ -103,15 +118,15 @@
       cur = title; curId = id || null;
       if (!id) return;
       timer = setTimeout(function () {
-        if (cur !== title) return;
+        if (cur !== title || !ov) return;
         box = document.createElement("div");
         box.className = "sm-v";
         var inner = document.createElement("div"), slot = document.createElement("div");
         inner.style.width = PW + "px"; inner.style.height = PH + "px";
-        inner.appendChild(slot); box.appendChild(inner); document.body.appendChild(box);
+        inner.appendChild(slot); box.appendChild(inner); ov.appendChild(box);
         layout();
         loadYT(function (YT) {
-          if (cur !== title) return;
+          if (cur !== title || !box) return;
           yt = new YT.Player(slot, {
             videoId: id, width: "100%", height: "100%",
             playerVars: { autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1,
@@ -123,7 +138,7 @@
             }
           });
           iv = setInterval(function () {
-            if (!yt || !yt.getCurrentTime || cur !== title) return;
+            if (!yt || !yt.getCurrentTime || cur !== title || !box) return;
             if (yt.getPlayerState() === 1 && yt.getCurrentTime() > START + WARM) {
               clearInterval(iv);
               box.style.opacity = "1";
@@ -132,14 +147,13 @@
         });
       }, DWELL);
     }
+    // Fill the cover box with the 16:9 player (zoomed past YouTube's chrome).
     function layout() {
       if (!box || !ov) return;
-      var r = ov.getBoundingClientRect();
-      box.style.left = r.left + "px"; box.style.top = r.top + "px";
-      box.style.width = r.width + "px"; box.style.height = r.height + "px";
-      var h = r.height * ZOOM, w = h * 16 / 9, inner = box.firstChild;
+      var cw = ov.offsetWidth, ch = ov.offsetHeight;
+      var h = ch * ZOOM, w = h * 16 / 9, inner = box.firstChild;
       inner.style.transform = "scale(" + (w / PW) + ")";
-      inner.style.left = (r.width - w) / 2 + "px"; inner.style.top = (r.height - h) / 2 + "px";
+      inner.style.left = (cw - w) / 2 + "px"; inner.style.top = (ch - h) / 2 + "px";
     }
     return { start: start, stop: stop, layout: layout };
   })();
@@ -160,28 +174,32 @@
     window.__smYT.push(cb);
   }
 
-  // ── Loop: rAF while a scene card is on screen, a slow poll otherwise ──
-  function teardown() {
+  function detach() {
     Clip.stop();
-    if (ov) { ov.remove(); ov = null; }
-    still = null; shownKey = null;
+    if (ro && coverEl) ro.unobserve(coverEl);
+    if (ov) ov.remove();
+    ov = null; coverEl = null; shownKey = null;
   }
 
-  function frame() {
+  // Watch for the cover changing (new spine, tab change). No per-frame work:
+  // the layers ride along with the cover natively.
+  function check() {
     var img = coverImg();
-    if (!img) { teardown(); active = false; return; }
+    if (!img) { if (ov) detach(); return; }
     if (!css.isConnected) document.head.appendChild(css);
     loadScenes();
-    if (!ov || !ov.isConnected) { ov = document.createElement("div"); ov.className = "sm-ov"; document.body.appendChild(ov); shownKey = null; }
-    var r = img.getBoundingClientRect();
-    ov.style.left = r.left + "px"; ov.style.top = r.top + "px";
-    ov.style.width = r.width + "px"; ov.style.height = r.height + "px";
-    if (img.alt !== shownKey && scenes) { shownKey = img.alt; showStill(img.alt, img); }
-    Clip.layout();
-    requestAnimationFrame(frame);
+    if (img !== coverEl || !ov || !ov.isConnected || ov.parentNode !== img.parentNode) {
+      detach();
+      coverEl = img;
+      ov = document.createElement("div");
+      ov.className = "sm-ov";
+      img.parentNode.appendChild(ov);
+      if (ro) ro.observe(img);
+      img.addEventListener("load", place);
+    }
+    place();
+    if (img.alt !== shownKey) { shownKey = img.alt; showStill(img.alt, img); }
   }
 
-  setInterval(function () {
-    if (!active && coverImg()) { active = true; requestAnimationFrame(frame); }
-  }, 300);
+  setInterval(check, 120);
 })();
