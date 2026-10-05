@@ -37,6 +37,17 @@ MAX_H = 560          # the cover renders 300 CSS px tall: ~2x on Retina
 QUALITY = 74
 UA = {"User-Agent": "darylecheazu.me cover fetcher (+https://darylecheazu.me)"}
 
+# Official trailers for shows where AniList has none, or one whose owner blocks
+# embedding. Each was checked to actually play in an embedded player (Oct 2026).
+# Hajime no Ippo: Crunchyroll's uploads block embedding. Monster: no official
+# trailer on YouTube. Both keep the still.
+TRAILER_OVERRIDES = {
+    "One Piece": "1KMcoJBMWE4",       # Crunchyroll, "We're Just Getting Started" trailer
+    "Dragon Ball Z": "Byo4rgMHUM4",   # Crunchyroll Dubs, Season 1 Blu-ray trailer
+    "Death Note": "oc0i0F_Q0go",      # VIZ Media, official anime trailer (AniList's blocks embedding)
+    "Demon Slayer": "gxM1j64w4fk",    # Aniplex USA, official English dub trailer (AniList's blocks embedding)
+}
+
 
 def template_text(path):
     html = open(path, encoding="utf-8").read()
@@ -143,7 +154,8 @@ def main():
         b = "banner-mal-%d.webp" % i
         scenes[title] = {
             "banner": "covers/" + b if os.path.exists(os.path.join(args.out, b)) else None,
-            "trailer": (tr.get("id") or "").strip() or None if tr.get("site") == "youtube" else None,
+            "trailer": TRAILER_OVERRIDES.get(title) or
+                       ((tr.get("id") or "").strip() or None if tr.get("site") == "youtube" else None),
         }
     with open(os.path.join(args.out, "scenes.json"), "w", encoding="utf-8") as fh:
         json.dump(scenes, fh, indent=1, ensure_ascii=False)
