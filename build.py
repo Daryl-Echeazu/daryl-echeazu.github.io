@@ -995,8 +995,9 @@ LOGO_MAX_EDGE = 128       # rendered at most 28 CSS px; 4x covers zoom + Retina
 PNG_MIN_BYTES = 64000     # leave small PNGs alone
 
 # Latin subsets drawn on the home view; preloaded so text doesn't wait on them.
+# (Geist Mono was here until labels moved to Newsreader; it's DarylOS-only now.)
 PRELOAD_FONTS = {("Instrument Serif", "normal"), ("Instrument Serif", "italic"),
-                 ("Geist Mono", "normal")}
+                 ("Newsreader", "normal")}
 
 
 def hero_variant(hero_name, width):

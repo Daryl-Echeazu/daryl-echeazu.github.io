@@ -202,4 +202,28 @@
   }
 
   setInterval(check, 120);
+
+  // ── Spine tags ───────────────────────────────────────────────────────────
+  // The little volume tags ("SHIPPUDEN", "LINK START") are clipped to 80% of
+  // the spine, which is narrower on phones. Let each use the full spine and,
+  // only if it still doesn't fit, step its text down until it does. Runs on
+  // tags it hasn't seen (spines re-mount on a genre switch).
+  var TAG = 'div[role="button"][title] span[style*="white-space: nowrap"][style*="background"]';
+  function fitTags() {
+    var tags = document.querySelectorAll(TAG + ":not([data-fit])");
+    for (var i = 0; i < tags.length; i++) {
+      var t = tags[i];
+      if (!t.offsetWidth) continue;              // not laid out yet
+      t.setAttribute("data-fit", "");
+      if (t.scrollWidth <= t.clientWidth + 0.5) continue;
+      t.style.setProperty("max-width", "100%", "important");
+      var fs = parseFloat(getComputedStyle(t).fontSize);
+      while (t.scrollWidth > t.clientWidth + 0.5 && fs > 4.2) {
+        fs -= 0.2;
+        t.style.setProperty("font-size", fs.toFixed(1) + "px", "important");
+      }
+      if (t.scrollWidth > t.clientWidth + 0.5) t.style.setProperty("padding-left", "1px", "important"), t.style.setProperty("padding-right", "1px", "important");
+    }
+  }
+  setInterval(fitTags, 400);
 })();
