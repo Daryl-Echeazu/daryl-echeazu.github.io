@@ -155,7 +155,9 @@ EXPERIENCE = [
 METHODS_ANCHOR = "  componentWillUnmount() {"
 METHODS = '''  // [build.py] Helpers for URL routing,
   // lazy gallery photos and the locally served shelf covers.
-  tabHash = { home: "", meanwhile: "about", work: "experience", live: "os", inbox: "inbox" };
+  // Real paths per tab; build.py writes about/index.html and
+  // experience/index.html so each loads directly (GitHub Pages is static).
+  tabPath = { home: "/", meanwhile: "/about/", work: "/experience/" };
   touchUI = typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(hover: none)").matches;
 
   // Gallery photos load only once the About tab is open, and only the one on
@@ -185,17 +187,27 @@ METHODS = '''  // [build.py] Helpers for URL routing,
     if (window.requestIdleCallback) window.requestIdleCallback(rest, { timeout: 5000 }); else setTimeout(rest, 3000);
   }
 
-  // Each tab has a URL (#about, #experience, #os): shareable, and Back works.
-  syncHash(tab) {
+  // Each tab has a URL (/about/, /experience/): shareable, Back works, and
+  // the page opens on that tab directly. Old #about / #experience links
+  // still work and are rewritten to the path.
+  routeTab() {
     try {
-      const h = this.tabHash[tab] ? "#" + this.tabHash[tab] : "";
-      if (h !== location.hash) history.pushState(null, "", h || location.pathname + location.search);
+      const legacy = { about: "meanwhile", experience: "work" }[location.hash.slice(1).toLowerCase()];
+      if (legacy) return legacy;
+      const p = location.pathname.replace(/\/+$/, "");
+      return Object.keys(this.tabPath).find(k => k !== "home" && this.tabPath[k].replace(/\/+$/, "") === p) || "home";
+    } catch (err) { return "home"; }
+  }
+  syncHash(tab, replace) {
+    try {
+      const want = this.tabPath[tab] || "/";
+      if (location.pathname !== want || location.hash) history[replace ? "replaceState" : "pushState"](null, "", want);
     } catch (err) {}
   }
   onHash = () => {
-    const h = location.hash.slice(1).toLowerCase();
-    const tab = Object.keys(this.tabHash).find(k => h && this.tabHash[k] === h) || "home";
+    const tab = this.routeTab();
     if (tab !== "home" && (this.navIds || []).indexOf(tab) < 0) return;
+    if (location.hash) this.syncHash(tab, true);
     if (tab !== this.state.tab) this.setState({ tab });
     if (tab === "meanwhile") this.warmShelves();
   };
@@ -203,12 +215,21 @@ METHODS = '''  // [build.py] Helpers for URL routing,
 '''
 
 LOGIC = [
+    # Modifier-click (new tab/window) goes to the browser: the tab links are
+    # real hrefs now.
     ('  setTab(tab, e) { if (e) e.preventDefault(); this.setState({ tab }); }',
-     '  setTab(tab, e) { if (e) e.preventDefault(); this.setState({ tab }); '
-     'if (tab === "meanwhile") this.warmShelves(); this.syncHash(tab); }'),
+     '  setTab(tab, e) { if (e) { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); } '
+     'this.setState({ tab }); if (tab === "meanwhile") this.warmShelves(); this.syncHash(tab); }'),
+    # Open on the tab the URL names, so /about/ doesn't flash the home view.
+    ('state = { tab: "home",', 'state = { tab: this.routeTab(),'),
+    ('        go: (e) => this.setTab(id, e)\n      })),',
+     '        href: this.tabPath[id] || "/",\n        go: (e) => this.setTab(id, e)\n      })),'),
     ('  componentDidMount() {\n    this.loadTasks();',
      '  componentDidMount() {\n'
      '    window.addEventListener("popstate", this.onHash);\n'
+     '    // The helmet re-applies its static <title> after renders; put the tab\'s back.\n'
+     '    this.titleObs = new MutationObserver(() => { if (this.wantTitle && document.title !== this.wantTitle) document.title = this.wantTitle; });\n'
+     '    this.titleObs.observe(document.head, { childList: true, subtree: true, characterData: true });\n'
      '    setTimeout(this.onHash, 0);\n'
      '    requestAnimationFrame(() => this.setState({ heroReady: true }));\n'
      '    this.loadTasks();'),
@@ -216,7 +237,9 @@ LOGIC = [
      'window.removeEventListener("resize", this.onResize); '
      'window.removeEventListener("popstate", this.onHash); }'),
     ('    const mob = s.vw < 760;\n',
-     '    const mob = s.vw < 760;\n    this.navIds = tabDefs.map(t => t[0]);\n'),
+     '    const mob = s.vw < 760;\n    this.navIds = tabDefs.map(t => t[0]);\n'
+     '    this.wantTitle = ({ meanwhile: "About · ", work: "Experience · " }[s.tab] || "") + "Daryl Echeazu";\n'
+     '    if (typeof document !== "undefined") setTimeout(() => { if (document.title !== this.wantTitle) document.title = this.wantTitle; }, 0);\n'),
     ('      works: this.worksList.map((w, i) => ({',
      '      heroSub: "CS + Math at UChicago. Building Gemini Enterprise Agents at Google.",\n'
      '      heroSubFont: mob ? "15px" : "17px",\n'
@@ -255,6 +278,12 @@ LOGIC = [
 
 # ── Markup: headings, landmarks, keyboard access, contrast ───────────────────
 MARKUP = [
+    # Real links: crawlable, and cmd-click / "open in new tab" work.
+    ('<a href="#" sc-camel-on-click="{{ t.go }}"', '<a href="{{ t.href }}" sc-camel-on-click="{{ t.go }}"'),
+    ('<a href="#" sc-camel-on-click="{{ goHome }}"', '<a href="/" sc-camel-on-click="{{ goHome }}"'),
+    # Everything relative resolves from the site root, so /about/index.html
+    # loads the same assets. (The outer head gets one too, from build.py.)
+    ('<head>\n', '<head>\n<base href="/">\n'),
     # Plain wording in the nav: shouted caps were half of the template look.
     ('["meanwhile", "ABOUT"], ["work", "EXPERIENCE"]', '["meanwhile", "About"], ["work", "Experience"]'),
     ('font-size: {{ navNameFont }};">DARYL ECHEAZU</a>', 'font-size: {{ navNameFont }};">Daryl Echeazu</a>'),

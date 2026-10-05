@@ -974,6 +974,14 @@ def recompress_jpeg(raw, quality, max_edge=None):
         return raw, "recompress failed: %s" % exc
 
 
+# ── Routes ───────────────────────────────────────────────────────────────────
+# Each tab gets a real page: about/index.html, experience/index.html. GitHub
+# Pages is static, so /about only works if a file is there; each is the same
+# app, which opens on the tab named by the path (content_patches routeTab).
+# Root-relative URLs come from a <base href="/"> in both heads.
+ROUTES = [("about", "About"), ("experience", "Experience")]
+BASE_TAG = '<base href="/">'
+
 # ── Images ───────────────────────────────────────────────────────────────────
 # The hero is served as WebP at the width the screen needs (srcset), with the
 # JPEG — capped at HERO_MAX_EDGE — as the fallback src and og:image. Other
@@ -1196,6 +1204,19 @@ def main():
             html = html[:m.end()] + "\n" + block + html[m.end():]
             print("link preview : meta added (card v%d)" % args.card_version)
 
+    # ── Base URL (outer head) ────────────────────────────────────────────────
+    # First thing in the head, before any relative URL, so route pages one
+    # folder down resolve loading.js, assets/ and covers/ from the root.
+    if BASE_TAG in html[:html.index("</head>")]:
+        print("base url     : already present")
+    else:
+        m = re.search(r'<meta charset="utf-8">', html)
+        if m:
+            html = html[:m.end()] + "\n  " + BASE_TAG + html[m.end():]
+            print("base url     : <base href=\"/\"> added")
+        else:
+            skip("base url     : SKIPPED — no <meta charset> to anchor to")
+
     # ── Loose scripts (outer head) ───────────────────────────────────────────
     # Remove whatever an earlier build injected, then insert the current set:
     # each file independently, so deleting one never drops the others.
@@ -1216,8 +1237,11 @@ def main():
 
     # ── Language attribute ───────────────────────────────────────────────────
     ln = 0
+    # content_patches puts <base href="/"> first in the template head; ignore it
+    # when checking whether these head patches are already applied.
+    html_nobase = html.replace('<head>\\n<base href=\\"/\\">\\n', '<head>\\n')
     for frm, to in LANG:
-        if to in html:
+        if to in html or to in html_nobase:
             ln += 1
         elif frm in html:
             html = html.replace(frm, to, 1)
@@ -1537,11 +1561,36 @@ def main():
     with open(index, "w", encoding="utf-8", newline="") as fh:
         fh.write(html)
 
+    # ── Route pages ─────────────────────────────────────────────────────────
+    # Same document; its own title and canonical, and no hero preload (those
+    # tabs don't show the hero, so it would be a wasted download).
+    for slug, label in ROUTES:
+        page = html
+        url = "%s/%s/" % (SITE_URL, slug)
+        for frm, to in (('<title>Daryl Echeazu</title>', '<title>%s · Daryl Echeazu</title>' % label),):
+            page = page.replace(frm, to, 1)
+        for q in ('"', '\\"'):
+            page = page.replace('rel=%scanonical%s href=%s%s/%s' % (q, q, q, SITE_URL, q),
+                                'rel=%scanonical%s href=%s%s%s' % (q, q, q, url, q))
+            page = page.replace('property=%sog:url%s content=%s%s/%s' % (q, q, q, SITE_URL, q),
+                                'property=%sog:url%s content=%s%s%s' % (q, q, q, url, q))
+        head_end = page.index("</head>")
+        page = re.sub(r'\n[ \t]*<link rel="preload" as="image"[^>]*>', "", page[:head_end]) + page[head_end:]
+        os.makedirs(os.path.join(outdir, slug), exist_ok=True)
+        with open(os.path.join(outdir, slug, "index.html"), "w", encoding="utf-8", newline="") as fh:
+            fh.write(page)
+    print("routes       : %s" % ", ".join("/%s/" % s for s, _ in ROUTES))
+
     # The sitemap's lastmod was edited by hand and drifted; stamp it.
     sitemap = os.path.join(outdir, "sitemap.xml")
     if os.path.isfile(sitemap):
         xml = open(sitemap, encoding="utf-8").read()
-        xml = re.sub(r"<lastmod>[^<]*</lastmod>", "<lastmod>%s</lastmod>" % date.today().isoformat(), xml)
+        today = date.today().isoformat()
+        urls = ["%s/" % SITE_URL] + ["%s/%s/" % (SITE_URL, s) for s, _ in ROUTES]
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "".join("  <url><loc>%s</loc><lastmod>%s</lastmod></url>\n" % (u, today) for u in urls)
+               + "</urlset>\n")
         with open(sitemap, "w", encoding="utf-8") as fh:
             fh.write(xml)
 
