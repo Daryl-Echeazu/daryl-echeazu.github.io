@@ -14,7 +14,7 @@
  *     overlay. Moving to another spine destroys it.
  *   - Phones: tapping a spine selects it; if it stays selected for DWELL ms the
  *     trailer loads the same way, rendered smaller so YouTube serves ~480p
- *     (about a third of the data). Data saver on: the still only.
+ *     (about a third of the data).
  *
  * Drawn as a fixed overlay on top of the app's cover <img>, outside React's
  * tree (and outside the zoom wrapper, so getBoundingClientRect is exact).
@@ -27,7 +27,6 @@
   var DWELL = 500;        // ms on one spine before a trailer loads
   var ZOOM = 1.4;         // crops YouTube's title bar / logo out of the frame
 
-  var canClip = !(navigator.connection && navigator.connection.saveData);
   // YouTube picks the stream from the player's size: HD for mouse-driven
   // screens, ~480p on touch devices (sharp at a phone-sized card).
   var touch = !!(window.matchMedia && matchMedia("(hover: none), (pointer: coarse)").matches);
@@ -85,7 +84,7 @@
     still = el;
     ov.appendChild(el);
     prefetchNeighbours(title);
-    if (canClip) Clip.start(title, s.trailer);
+    Clip.start(title, s.trailer);
   }
 
   // ── The clip ────────────────────────────────────────────────────────────
