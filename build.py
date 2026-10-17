@@ -981,6 +981,9 @@ def recompress_jpeg(raw, quality, max_edge=None):
 # Root-relative URLs come from a <base href="/"> in both heads.
 ROUTES = [("about", "About"), ("experience", "Experience")]
 BASE_TAG = '<base href="/">'
+# Pages that are their own files, not this app: listed in the sitemap only.
+# stacks/index.html is written by fetch_catalogue.py from stacks/anime.json.
+PAGES = ["stacks"]
 
 # ── Images ───────────────────────────────────────────────────────────────────
 # The hero is served as WebP at the width the screen needs (srcset), with the
@@ -1587,7 +1590,7 @@ def main():
     if os.path.isfile(sitemap):
         xml = open(sitemap, encoding="utf-8").read()
         today = date.today().isoformat()
-        urls = ["%s/" % SITE_URL] + ["%s/%s/" % (SITE_URL, s) for s, _ in ROUTES]
+        urls = ["%s/" % SITE_URL] + ["%s/%s/" % (SITE_URL, s) for s, _ in ROUTES] + ["%s/%s/" % (SITE_URL, s) for s in PAGES]
         xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join("  <url><loc>%s</loc><lastmod>%s</lastmod></url>\n" % (u, today) for u in urls)

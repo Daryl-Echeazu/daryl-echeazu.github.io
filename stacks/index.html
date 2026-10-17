@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Stacks · Daryl Echeazu</title>
+<meta name="description" content="Every anime on Daryl Echeazu's shelf: the full catalogue behind The Stacks, with covers, episodes, studios and one-line takes.">
+<link rel="canonical" href="https://darylecheazu.me/stacks/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Daryl Echeazu">
+<meta property="og:title" content="The Stacks · Daryl Echeazu">
+<meta property="og:description" content="Every anime on the shelf, catalogued.">
+<meta property="og:url" content="https://darylecheazu.me/stacks/">
+<meta property="og:image" content="https://darylecheazu.me/social-preview.jpg?v=1">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<!-- Geist is the site's own sans (assets/), standing in for the streaming-app look. -->
+<link rel="preload" as="font" type="font/woff2" href="/assets/c96a97d3-5e4c-4f11-b614-7f6024ffec1b.woff2" crossorigin>
+<style>
+  @font-face { font-family: 'Geist'; font-style: normal; font-weight: 400 500; font-display: swap;
+    src: url("/assets/c96a97d3-5e4c-4f11-b614-7f6024ffec1b.woff2") format('woff2'); }
+
+  :root {
+    --bg: #000;
+    --panel: #23252b;        /* the hover card */
+    --field: #141519;        /* inputs, chrome */
+    --line: #2b2d33;
+    --ink: #fff;
+    --ink-2: #dadada;
+    --mute: #a0a0a0;
+    --accent: oklch(0.78 0.14 78);   /* the site's gold, where the app would be orange */
+    --sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --gutter: clamp(16px, 3vw, 40px);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ── Header bar ───────────────────────────────────────────────────── */
+  .nav { height: 60px; display: flex; align-items: center; gap: clamp(18px, 3vw, 36px); padding: 0 var(--gutter); background: var(--bg); position: sticky; top: 0; z-index: 5; }
+  .nav .name { font-weight: 500; font-size: 15px; color: var(--ink); margin-right: auto; }
+  .nav a { font-size: 14px; font-weight: 500; color: var(--ink-2); padding: 20px 0; border-bottom: 2px solid transparent; transition: color .15s ease; }
+  .nav a:hover { color: var(--ink); }
+  .nav .here { color: var(--ink); border-bottom-color: var(--accent); }
+  @media (max-width: 560px) { .nav a { font-size: 13px; } }
+
+  main { max-width: 1440px; margin: 0 auto; padding: 24px var(--gutter) 80px; }
+
+  /* ── Title row + filters ──────────────────────────────────────────── */
+  .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding: 12px 0 20px; }
+  h1 { margin: 0; font-size: 28px; font-weight: 500; line-height: 1.2; }
+  .head .count { color: var(--mute); font-size: 14px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .sel, .find { height: 40px; background: var(--field); border: 1px solid var(--line); color: var(--ink); padding: 0 12px; font-size: 14px; font-weight: 500; border-radius: 2px; }
+  .sel { appearance: none; -webkit-appearance: none; padding-right: 34px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23dadada' stroke-width='1.6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; }
+  .sel:hover, .find:hover { border-color: #3a3d44; }
+  .find { width: 220px; font-weight: 400; }
+  .find::placeholder { color: var(--mute); }
+  .find::-webkit-search-cancel-button { -webkit-appearance: none; }
+  @media (max-width: 560px) { .tools { width: 100%; } .find { flex: 1 1 100%; width: auto; } .sel { flex: 1 1 40%; } }
+
+  /* ── Grid ─────────────────────────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 28px 16px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; } }
+  .card { position: relative; outline: 0; }
+  .card[hidden] { display: none; }
+  .poster { position: relative; aspect-ratio: 2 / 3; overflow: hidden; background: var(--field); }
+  .poster img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .tag { position: absolute; top: 0; left: 0; padding: 3px 8px; font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #000; }
+  .tag.dim { background: rgba(0, 0, 0, .78); color: var(--ink); }
+  .below { padding-top: 8px; }
+  .title { font-size: 16px; font-weight: 500; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sub { margin-top: 3px; color: var(--mute); font-size: 14px; }
+  .stars { margin-top: 2px; display: flex; align-items: center; gap: 4px; color: var(--ink-2); font-size: 14px; }
+  .stars svg, .h-rating svg { width: 14px; height: 14px; fill: var(--accent); flex: none; }
+  .stars .n, .h-rating .n { color: var(--mute); }
+
+  /* The hover card: covers the whole tile, like the app's. */
+  .hover {
+    position: absolute; inset: 0; z-index: 2; background: var(--panel); padding: 16px 16px 14px;
+    display: flex; flex-direction: column; gap: 6px; opacity: 0; pointer-events: none; transition: opacity .18s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .6);
+  }
+  @media (hover: hover) { .card:hover .hover { opacity: 1; pointer-events: auto; } }
+  .card:focus-within .hover, .card.is-open .hover { opacity: 1; pointer-events: auto; }
+  .h-title { flex: none; font-size: 16px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .h-rating { flex: none; display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--ink-2); }
+  .h-meta { flex: none; color: var(--mute); font-size: 14px; }
+  /* The synopsis takes whatever height is left and fades out; the take and the icons never get squeezed. */
+  .h-desc { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.45; flex: 1 1 0; min-height: 0; overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 calc(100% - 18px), transparent); mask-image: linear-gradient(#000 calc(100% - 18px), transparent); }
+  .h-take { flex: none; margin: 6px 0 0; font-size: 14px; line-height: 1.4; color: var(--accent); font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .h-actions { flex: none; display: flex; gap: 6px; margin-top: 8px; margin-left: -8px; }
+  .ico { width: 40px; height: 40px; display: grid; place-items: center; color: var(--accent); border-radius: 50%; transition: background .15s ease; }
+  .ico:hover { background: rgba(255, 255, 255, .08); }
+  .ico svg { width: 22px; height: 22px; fill: currentColor; }
+  .ico.off { color: var(--mute); }
+
+  .empty { margin-top: 60px; text-align: center; color: var(--mute); }
+  .empty[hidden] { display: none; }
+  .foot { margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--mute); font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .foot a { color: var(--ink-2); }
+  .foot a:hover { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .hover { transition: none; } }
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Primary">
+  <a class="name" href="/">Daryl Echeazu</a>
+  <a href="/about/">About</a>
+  <a href="/experience/">Experience</a>
+  <a class="here" href="/stacks/" aria-current="page">The Stacks</a>
+</nav>
+
+<main>
+  <div class="head">
+    <div>
+      <h1>The Stacks</h1>
+      <div class="count" id="count"><!-- [catalogue stats] -->24 titles<!-- [/catalogue stats] --></div>
+    </div>
+    <div class="tools">
+      <select class="sel" id="sort" aria-label="Sort">
+        <option value="mine">My order</option>
+        <option value="pop">Popular</option>
+        <option value="year">Newest</option>
+        <option value="title">Alphabetical</option>
+        <option value="eps">Longest</option>
+      </select>
+      <select class="sel" id="genre" aria-label="Genre">
+        <option value="">All genres</option>
+      </select>
+      <input class="find" id="q" type="search" placeholder="Search" autocomplete="off" aria-label="Search the catalogue">
+    </div>
+  </div>
+
+  <section class="grid" id="grid" aria-label="Catalogue">
+<!-- [catalogue] -->
+<article class="card" id="hajime-no-ippo" tabindex="0" data-i="0" data-title="Hajime no Ippo" data-year="2000" data-eps="75" data-pop="146876" data-genres="Comedy|Drama|Sports" data-search="Hajime no Ippo Hajime no Ippo: The Fighting! Hajime no Ippo: THE FIGHTING! MADHOUSE Above everything. Non-negotiable. Comedy Drama Sports">
+  <div class="poster"><img src="/covers/mal-263.webp" alt="" width="373" height="560" loading="eager" decoding="async"><span class="tag">All-timer</span></div>
+  <div class="below"><div class="title">Hajime no Ippo</div><div class="sub">2000 · 75 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(146.9k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Hajime no Ippo</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(146.9k)</span></div>
+    <div class="h-meta">Finished · 75 Episodes · MADHOUSE</div>
+    <p class="h-desc">Makunouchi Ippo has been bullied his entire life. Constantly running errands and being beaten up by his classmates, Ippo has always dreamed of changing himself, but never has the passion to act upon it. One day, in the midst of yet another bullying, Ippo is saved by Takamura Mamoru, who happens to be a boxer. Ippo…</p>
+    <p class="h-take">“Above everything. Non-negotiable.”</p>
+    <div class="h-actions"><a class="ico" href="https://anilist.co/anime/263" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="one-piece" tabindex="0" data-i="1" data-title="One Piece" data-year="1999" data-eps="" data-pop="760480" data-genres="Action|Adventure|Comedy|Drama|Fantasy" data-search="One Piece ONE PIECE ONE PIECE Toei Animation Still going. So am I. Action Adventure Comedy Drama Fantasy">
+  <div class="poster"><img src="/covers/mal-21.webp" alt="" width="373" height="560" loading="eager" decoding="async"><span class="tag dim">Airing</span></div>
+  <div class="below"><div class="title">One Piece</div><div class="sub">1999 · Airing</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(760.5k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">One Piece</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(760.5k)</span></div>
+    <div class="h-meta">Airing · Toei Animation</div>
+    <p class="h-desc">Gold Roger was known as the Pirate King, the strongest and most infamous being to have sailed the Grand Line. The capture and death of Roger by the World Government brought a change throughout the world. His last words before his death revealed the location of the greatest treasure in the world, One Piece. It was this…</p>
+    <p class="h-take">“Still going. So am I.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=1KMcoJBMWE4" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/21" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="hunter-x-hunter" tabindex="0" data-i="2" data-title="Hunter × Hunter" data-year="2011" data-eps="148" data-pop="849801" data-genres="Action|Adventure|Fantasy" data-search="Hunter × Hunter Hunter x Hunter (2011) HUNTER×HUNTER (2011) MADHOUSE Chimera Ant arc is peak fiction. I don&#x27;t make the rules. Action Adventure Fantasy">
+  <div class="poster"><img src="/covers/mal-11061.webp" alt="" width="396" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Hunter × Hunter</div><div class="sub">2011 · 148 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.5 <span class="n">(849.8k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Hunter × Hunter</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.5 <span class="n">(849.8k)</span></div>
+    <div class="h-meta">Finished · 148 Episodes · MADHOUSE</div>
+    <p class="h-desc">A Hunter is one who travels the world doing all sorts of dangerous tasks. From capturing criminals to searching deep within uncharted lands for any lost treasures. Gon is a young boy whose father disappeared long ago, being a Hunter. He believes if he could also follow his father&#x27;s path, he could one day reunite with…</p>
+    <p class="h-take">“Chimera Ant arc is peak fiction. I don&#x27;t make the rules.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=d6kBeJjTGnY" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/11061" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="attack-on-titan" tabindex="0" data-i="3" data-title="Attack on Titan" data-year="2013" data-eps="25" data-pop="1067119" data-genres="Action|Drama|Fantasy|Mystery" data-search="Attack on Titan Attack on Titan Shingeki no Kyojin WIT STUDIO The twists still hold up on rewatch. Action Drama Fantasy Mystery">
+  <div class="poster"><img src="/covers/mal-16498.webp" alt="" width="405" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Attack on Titan</div><div class="sub">2013 · 25 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(1.1M)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Attack on Titan</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(1.1M)</span></div>
+    <div class="h-meta">Finished · 25 Episodes · WIT STUDIO</div>
+    <p class="h-desc">Several hundred years ago, humans were nearly exterminated by titans. Titans are typically several stories tall, seem to have no intelligence, devour human beings and, worst of all, seem to do it for the pleasure rather than as a food source. A small percentage of humanity survived by walling themselves in a city…</p>
+    <p class="h-take">“The twists still hold up on rewatch.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=LHtdKWJdif4" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/16498" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="vinland-saga" tabindex="0" data-i="4" data-title="Vinland Saga" data-year="2019" data-eps="24" data-pop="553435" data-genres="Action|Adventure|Drama" data-search="Vinland Saga Vinland Saga VINLAND SAGA WIT STUDIO Best redemption arc in anime, not close. Action Adventure Drama">
+  <div class="poster"><img src="/covers/mal-37521.webp" alt="" width="397" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Vinland Saga</div><div class="sub">2019 · 24 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(553.4k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Vinland Saga</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.3 <span class="n">(553.4k)</span></div>
+    <div class="h-meta">Finished · 24 Episodes · WIT STUDIO</div>
+    <p class="h-desc">Thorfinn is son to one of the Vikings&#x27; greatest warriors, but when his father is killed in battle by the mercenary leader Askeladd, he swears to have his revenge. Thorfinn joins Askeladd&#x27;s band in order to challenge him to a duel, and ends up caught in the middle of a war for the crown of England.</p>
+    <p class="h-take">“Best redemption arc in anime, not close.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=5xqEp7R9SYM" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/101348" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="death-note" tabindex="0" data-i="5" data-title="Death Note" data-year="2006" data-eps="37" data-pop="972868" data-genres="Mystery|Psychological|Supernatural|Thriller" data-search="Death Note Death Note DEATH NOTE MADHOUSE Peak cat-and-mouse. L deserved better. Mystery Psychological Supernatural Thriller">
+  <div class="poster"><img src="/covers/mal-1535.webp" alt="" width="396" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Death Note</div><div class="sub">2006 · 37 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(972.9k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Death Note</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(972.9k)</span></div>
+    <div class="h-meta">Finished · 37 Episodes · MADHOUSE</div>
+    <p class="h-desc">Light Yagami is a genius high school student who is about to learn about life through a book of death. When a bored shinigami, a God of Death, named Ryuk drops a black notepad called a Death Note, Light receives power over life and death with the stroke of a pen. Determined to use this dark gift for the best, Light…</p>
+    <p class="h-take">“Peak cat-and-mouse. L deserved better.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=oc0i0F_Q0go" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/1535" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="monster" tabindex="0" data-i="6" data-title="Monster" data-year="2004" data-eps="74" data-pop="347060" data-genres="Drama|Horror|Mystery|Psychological|Thriller" data-search="Monster Monster MONSTER MADHOUSE Johan might be the scariest character ever written. Drama Horror Mystery Psychological Thriller">
+  <div class="poster"><img src="/covers/mal-19.webp" alt="" width="386" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Monster</div><div class="sub">2004 · 74 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.4 <span class="n">(347.1k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Monster</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.4 <span class="n">(347.1k)</span></div>
+    <div class="h-meta">Finished · 74 Episodes · MADHOUSE</div>
+    <p class="h-desc">Dr. Kenzo Tenma is a renowned Japanese brain surgeon working at a leading hospital in Germany. One night, Dr. Tenma risks his reputation and career to save the life of a critically wounded young boy over that of the town mayor who had been planning to support the hospital financially. A string of mysterious murders…</p>
+    <p class="h-take">“Johan might be the scariest character ever written.”</p>
+    <div class="h-actions"><a class="ico" href="https://anilist.co/anime/19" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="jujutsu-kaisen" tabindex="0" data-i="7" data-title="Jujutsu Kaisen" data-year="2020" data-eps="24" data-pop="985034" data-genres="Action|Drama|Supernatural" data-search="Jujutsu Kaisen JUJUTSU KAISEN Jujutsu Kaisen MAPPA Gojo carried, but the animation is the real star. Action Drama Supernatural">
+  <div class="poster"><img src="/covers/mal-40748.webp" alt="" width="401" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Jujutsu Kaisen</div><div class="sub">2020 · 24 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(985k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Jujutsu Kaisen</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(985k)</span></div>
+    <div class="h-meta">Finished · 24 Episodes · MAPPA</div>
+    <p class="h-desc">A boy fights... for &quot;the right death.&quot; Hardship, regret, shame: the negative feelings that humans feel become Curses that lurk in our everyday lives. The Curses run rampant throughout the world, capable of leading people to terrible misfortune and even death. What&#x27;s more, the Curses can only be exorcised by another…</p>
+    <p class="h-take">“Gojo carried, but the animation is the real star.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=RIyb52EMx8c" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/113415" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="demon-slayer" tabindex="0" data-i="8" data-title="Demon Slayer" data-year="2019" data-eps="26" data-pop="1005138" data-genres="Action|Adventure|Drama|Fantasy|Supernatural" data-search="Demon Slayer Demon Slayer: Kimetsu no Yaiba Kimetsu no Yaiba ufotable Ufotable never misses on the fights. Action Adventure Drama Fantasy Supernatural">
+  <div class="poster"><img src="/covers/mal-38000.webp" alt="" width="403" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Demon Slayer</div><div class="sub">2019 · 26 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.1 <span class="n">(1M)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Demon Slayer</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.1 <span class="n">(1M)</span></div>
+    <div class="h-meta">Finished · 26 Episodes · ufotable</div>
+    <p class="h-desc">It is the Taisho Period in Japan. Tanjiro, a kindhearted boy who sells charcoal for a living, finds his family slaughtered by a demon. To make matters worse, his younger sister Nezuko, the sole survivor, has been transformed into a demon herself. Though devastated by this grim reality, Tanjiro resolves to become a…</p>
+    <p class="h-take">“Ufotable never misses on the fights.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=gxM1j64w4fk" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/101922" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="naruto" tabindex="0" data-i="9" data-title="Naruto" data-year="2002" data-eps="220" data-pop="733936" data-genres="Action|Adventure|Comedy|Drama|Fantasy|Supernatural" data-search="Naruto Naruto NARUTO Studio Pierrot The childhood one. Believe it. Action Adventure Comedy Drama Fantasy Supernatural">
+  <div class="poster"><img src="/covers/mal-20.webp" alt="" width="397" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Naruto</div><div class="sub">2002 · 220 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(733.9k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Naruto</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(733.9k)</span></div>
+    <div class="h-meta">Finished · 220 Episodes · Studio Pierrot</div>
+    <p class="h-desc">Naruto Uzumaki, a hyperactive and knuckle-headed ninja, lives in Konohagakure, the Hidden Leaf village. Moments prior to his birth, a huge demon known as the Kyuubi, the Nine-tailed Fox, attacked Konohagakure and wreaked havoc. In order to put an end to the Kyuubi&#x27;s rampage, the leader of the village, the 4th Hokage…</p>
+    <p class="h-take">“The childhood one. Believe it.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=-G9BqkgZXRA" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/20" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="dragon-ball-z" tabindex="0" data-i="10" data-title="Dragon Ball Z" data-year="1989" data-eps="291" data-pop="262178" data-genres="Action|Adventure|Comedy|Fantasy|Supernatural" data-search="Dragon Ball Z Dragon Ball Z Dragon Ball Z Toei Animation The blueprint for every power-up scream since. Action Adventure Comedy Fantasy Supernatural">
+  <div class="poster"><img src="/covers/mal-813.webp" alt="" width="373" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Dragon Ball Z</div><div class="sub">1989 · 291 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(262.2k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Dragon Ball Z</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(262.2k)</span></div>
+    <div class="h-meta">Finished · 291 Episodes · Toei Animation</div>
+    <p class="h-desc">Goku is back with his new son, Gohan, but just when things are getting settled down, the adventures continue. Whether he is facing enemies such as Freeza, Cell, or Boo, Goku is proven to be an elite of his own and discovers his race, Saiyan. He meets many new people, gaining allies as well as enemies, as he still…</p>
+    <p class="h-take">“The blueprint for every power-up scream since.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=Byo4rgMHUM4" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/813" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="solo-leveling" tabindex="0" data-i="11" data-title="Solo Leveling" data-year="2024" data-eps="12" data-pop="455368" data-genres="Action|Adventure|Fantasy" data-search="Solo Leveling Solo Leveling Ore dake Level Up na Ken A-1 Pictures Arise. The gym arc of anime. Action Adventure Fantasy">
+  <div class="poster"><img src="/covers/mal-52299.webp" alt="" width="423" height="560" loading="eager" decoding="async"></div>
+  <div class="below"><div class="title">Solo Leveling</div><div class="sub">2024 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(455.4k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Solo Leveling</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(455.4k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · A-1 Pictures</div>
+    <p class="h-desc">They say whatever doesn’t kill you makes you stronger, but that’s not the case for the world’s weakest hunter Seong Jin-U. After being brutally slaughtered by monsters in a high-ranking dungeon, Jin-U came back with the System, a program only he could see, that’s leveling him up in every way. Now, he’s inspired to…</p>
+    <p class="h-take">“Arise. The gym arc of anime.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=HkIKAnwLZCw" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/151807" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="blue-lock" tabindex="0" data-i="12" data-title="Blue Lock" data-year="2022" data-eps="24" data-pop="330552" data-genres="Action|Drama|Sports" data-search="Blue Lock BLUE LOCK Blue Lock 8-bit Unhinged sports psychology. Peak ego. Action Drama Sports">
+  <div class="poster"><img src="/covers/mal-49596.webp" alt="" width="400" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Blue Lock</div><div class="sub">2022 · 24 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(330.6k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Blue Lock</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(330.6k)</span></div>
+    <div class="h-meta">Finished · 24 Episodes · 8-bit</div>
+    <p class="h-desc">Japan’s desire for World Cup glory leads the Japanese Football Association to launch a new rigorous training program to find the national team’s next striker. Three hundred high school players are pitted against each other for the position, but only one will come out on top. Who among them will be the striker to usher…</p>
+    <p class="h-take">“Unhinged sports psychology. Peak ego.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=5YBL7fx94RU" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/137822" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="dr-stone" tabindex="0" data-i="13" data-title="Dr. Stone" data-year="2019" data-eps="24" data-pop="560659" data-genres="Action|Adventure|Comedy|Sci-Fi" data-search="Dr. Stone Dr. STONE Dr. STONE TMS Entertainment Science propaganda that actually works. Action Adventure Comedy Sci-Fi">
+  <div class="poster"><img src="/covers/mal-38691.webp" alt="" width="379" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Dr. Stone</div><div class="sub">2019 · 24 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(560.7k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Dr. Stone</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(560.7k)</span></div>
+    <div class="h-meta">Finished · 24 Episodes · TMS Entertainment</div>
+    <p class="h-desc">After five years of harboring unspoken feelings, high-schooler Taiju Ooki is finally ready to confess his love to Yuzuriha Ogawa. Just when Taiju begins his confession however, a blinding green light strikes the Earth and petrifies mankind around the world— turning every single human into stone. Several millennia…</p>
+    <p class="h-take">“Science propaganda that actually works.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=pon9R5n5dMk" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/105333" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="hell-s-paradise" tabindex="0" data-i="14" data-title="Hell&#x27;s Paradise" data-year="2023" data-eps="13" data-pop="368106" data-genres="Action|Adventure|Mystery|Supernatural" data-search="Hell&#x27;s Paradise Hell’s Paradise Jigokuraku MAPPA Gorgeous and brutal in equal measure. Action Adventure Mystery Supernatural">
+  <div class="poster"><img src="/covers/mal-46569.webp" alt="" width="392" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Hell&#x27;s Paradise</div><div class="sub">2023 · 13 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(368.1k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Hell&#x27;s Paradise</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(368.1k)</span></div>
+    <div class="h-meta">Finished · 13 Episodes · MAPPA</div>
+    <p class="h-desc">The Edo period is nearing its end. Gabimaru, a shinobi formerly known as the strongest in Iwagakure who is now a death row convict, is told that he will be acquitted and set free if he can bring back the Elixir of Life from an island that is rumored to be the Buddhist pure land Sukhavati. In hopes of reuniting with…</p>
+    <p class="h-take">“Gorgeous and brutal in equal measure.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=t1Sqcxti0Ls" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/128893" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="black-clover" tabindex="0" data-i="15" data-title="Black Clover" data-year="2017" data-eps="170" data-pop="595051" data-genres="Action|Adventure|Comedy|Fantasy" data-search="Black Clover Black Clover Black Clover Studio Pierrot Started loud, ended top-tier. Trust the process. Action Adventure Comedy Fantasy">
+  <div class="poster"><img src="/covers/mal-34572.webp" alt="" width="396" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Black Clover</div><div class="sub">2017 · 170 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(595.1k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Black Clover</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(595.1k)</span></div>
+    <div class="h-meta">Finished · 170 Episodes · Studio Pierrot</div>
+    <p class="h-desc">In a world where magic is everything, Asta and Yuno are both found abandoned at a church on the same day. While Yuno is gifted with exceptional magical powers, Asta is the only one in this world without any. At the age of fifteen, both receive grimoires, magic books that amplify their holder’s magic. Asta’s is a rare…</p>
+    <p class="h-take">“Started loud, ended top-tier. Trust the process.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=vUjAxk1qYzQ" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/97940" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="one-punch-man" tabindex="0" data-i="16" data-title="One Punch Man" data-year="2015" data-eps="12" data-pop="774321" data-genres="Action|Comedy|Sci-Fi|Supernatural" data-search="One Punch Man One-Punch Man One Punch Man MADHOUSE The joke that outgrew the joke. Action Comedy Sci-Fi Supernatural">
+  <div class="poster"><img src="/covers/mal-30276.webp" alt="" width="397" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">One Punch Man</div><div class="sub">2015 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.1 <span class="n">(774.3k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">One Punch Man</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.1 <span class="n">(774.3k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · MADHOUSE</div>
+    <p class="h-desc">Saitama has a rather peculiar hobby, being a superhero, but despite his heroic deeds and superhuman abilities, a shadow looms over his life. He&#x27;s become much too powerful, to the point that every opponent ends up defeated with a single punch. The lack of challenge has driven him into a state of apathy, as he watches…</p>
+    <p class="h-take">“The joke that outgrew the joke.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=RzmFKUDOUgw" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/21087" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="fire-force" tabindex="0" data-i="17" data-title="Fire Force" data-year="2019" data-eps="24" data-pop="489194" data-genres="Action|Drama|Sci-Fi|Supernatural" data-search="Fire Force Fire Force Enen no Shouboutai david production Animation heat in every sense. Action Drama Sci-Fi Supernatural">
+  <div class="poster"><img src="/covers/mal-38671.webp" alt="" width="373" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Fire Force</div><div class="sub">2019 · 24 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(489.2k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Fire Force</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(489.2k)</span></div>
+    <div class="h-meta">Finished · 24 Episodes · david production</div>
+    <p class="h-desc">Year 198 of the Solar Era in Tokyo, special fire brigades are fighting against a phenomenon called spontaneous human combustion where human beings are turned into living infernos called &quot;Infernals.” While the Infernals are first-generation cases of spontaneous human combustion, later generations possess the ability to…</p>
+    <p class="h-take">“Animation heat in every sense.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=Dpae4acLLeA" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/105310" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="classroom-of-the-elite" tabindex="0" data-i="18" data-title="Classroom of the Elite" data-year="2017" data-eps="12" data-pop="453056" data-genres="Drama|Psychological" data-search="Classroom of the Elite Classroom of the Elite Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e Lerche Ayanokoji is the coldest protagonist ever. Drama Psychological">
+  <div class="poster"><img src="/covers/mal-35507.webp" alt="" width="360" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Classroom of the Elite</div><div class="sub">2017 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(453.1k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Classroom of the Elite</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(453.1k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · Lerche</div>
+    <p class="h-desc">Koudo Ikusei Senior High School is a leading school with state-of-the-art facilities. The students there have the freedom to wear any hairstyle and bring any personal effects they desire. Koudo Ikusei is like a utopia, but the truth is that only the most superior students receive favorable treatment. Kiyotaka…</p>
+    <p class="h-take">“Ayanokoji is the coldest protagonist ever.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=iYsx6w5PNno" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/98659" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="sword-art-online" tabindex="0" data-i="19" data-title="Sword Art Online" data-year="2012" data-eps="25" data-pop="726440" data-genres="Action|Adventure|Fantasy|Romance" data-search="Sword Art Online Sword Art Online Sword Art Online A-1 Pictures The isekai gateway drug. No regrets. Action Adventure Fantasy Romance">
+  <div class="poster"><img src="/covers/mal-11757.webp" alt="" width="395" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Sword Art Online</div><div class="sub">2012 · 25 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.5 <span class="n">(726.4k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Sword Art Online</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.5 <span class="n">(726.4k)</span></div>
+    <div class="h-meta">Finished · 25 Episodes · A-1 Pictures</div>
+    <p class="h-desc">In the near future, a Virtual Reality Massive Multiplayer Online Role-Playing Game (VRMMORPG) called Sword Art Online has been released where players control their avatars with their bodies using a piece of technology called Nerve Gear. One day, players discover they cannot log out, as the game creator is holding them…</p>
+    <p class="h-take">“The isekai gateway drug. No regrets.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=C8Jl_-b7ju0" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/11757" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="tokyo-ghoul" tabindex="0" data-i="20" data-title="Tokyo Ghoul" data-year="2014" data-eps="12" data-pop="747759" data-genres="Action|Drama|Horror|Mystery|Psychological|Supernatural" data-search="Tokyo Ghoul Tokyo Ghoul Tokyo Ghoul Studio Pierrot Season 1 and the manga. We don&#x27;t discuss the rest. Action Drama Horror Mystery Psychological Supernatural">
+  <div class="poster"><img src="/covers/mal-22319.webp" alt="" width="230" height="325" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Tokyo Ghoul</div><div class="sub">2014 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(747.8k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Tokyo Ghoul</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 3.8 <span class="n">(747.8k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · Studio Pierrot</div>
+    <p class="h-desc">The suspense horror/dark fantasy story is set in Tokyo, which is haunted by mysterious &quot;ghouls&quot; who are devouring humans. People are gripped by the fear of these ghouls whose identities are masked in mystery. An ordinary college student named Kaneki encounters Rize, a girl who is an avid reader like him, at the café…</p>
+    <p class="h-take">“Season 1 and the manga. We don&#x27;t discuss the rest.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=XfQUjYsVBrE" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/20605" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="promised-neverland" tabindex="0" data-i="21" data-title="Promised Neverland" data-year="2019" data-eps="12" data-pop="638657" data-genres="Drama|Fantasy|Horror|Mystery|Psychological|Thriller" data-search="Promised Neverland The Promised Neverland Yakusoku no Neverland CloverWorks S1 is a perfect thriller. Full stop. Drama Fantasy Horror Mystery Psychological Thriller">
+  <div class="poster"><img src="/covers/mal-37779.webp" alt="" width="398" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Promised Neverland</div><div class="sub">2019 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(638.7k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Promised Neverland</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.2 <span class="n">(638.7k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · CloverWorks</div>
+    <p class="h-desc">Emma, Norman and Ray are the brightest kids at the Grace Field House orphanage. And under the care of the woman they refer to as “Mom,” all the kids have enjoyed a comfortable life. Good food, clean clothes and the perfect environment to learn—what more could an orphan ask for? One day, though, Emma and Norman uncover…</p>
+    <p class="h-take">“S1 is a perfect thriller. Full stop.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=ApLudqucq-s" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/101759" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="kaiju-no-8" tabindex="0" data-i="22" data-title="Kaiju No. 8" data-year="2024" data-eps="12" data-pop="288073" data-genres="Action|Sci-Fi" data-search="Kaiju No. 8 Kaiju No. 8 Kaijuu 8-gou Production I.G Late-bloomer protagonist done right. Action Sci-Fi">
+  <div class="poster"><img src="/covers/mal-52588.webp" alt="" width="396" height="560" loading="lazy" decoding="async"></div>
+  <div class="below"><div class="title">Kaiju No. 8</div><div class="sub">2024 · 12 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(288.1k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Kaiju No. 8</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.0 <span class="n">(288.1k)</span></div>
+    <div class="h-meta">Finished · 12 Episodes · Production I.G</div>
+    <p class="h-desc">With the highest kaiju-emergence rates in the world, Japan is no stranger to attack by deadly monsters. Enter the Japan Defense Force, a military organization tasked with the neutralization of kaiju. Kafka Hibino, a kaiju-corpse cleanup man, has always dreamed of joining the force. But when he gets another shot at…</p>
+    <p class="h-take">“Late-bloomer protagonist done right.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=7n_mFVPeApw" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/153288" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<article class="card" id="frieren" tabindex="0" data-i="23" data-title="Frieren" data-year="2023" data-eps="28" data-pop="490681" data-genres="Adventure|Drama|Fantasy" data-search="Frieren Frieren: Beyond Journey’s End Sousou no Frieren MADHOUSE One episode at a time, on purpose. Adventure Drama Fantasy">
+  <div class="poster"><img src="/covers/mal-52991.webp" alt="" width="397" height="560" loading="lazy" decoding="async"><span class="tag">Watching</span></div>
+  <div class="below"><div class="title">Frieren</div><div class="sub">2023 · 28 Episodes</div><div class="stars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.5 <span class="n">(490.7k)</span></div></div>
+  <div class="hover">
+    <div class="h-title">Frieren</div>
+    <div class="h-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.5l-6 3.3 1.3-6.7-5-4.6 6.8-.8z"/></svg> 4.5 <span class="n">(490.7k)</span></div>
+    <div class="h-meta">Finished · 28 Episodes · MADHOUSE</div>
+    <p class="h-desc">The adventure is over but life goes on for an elf mage just beginning to learn what living is all about. Elf mage Frieren and her courageous fellow adventurers have defeated the Demon King and brought peace to the land. But Frieren will long outlive the rest of her former party. How will she come to understand what…</p>
+    <p class="h-take">“One episode at a time, on purpose.”</p>
+    <div class="h-actions"><a class="ico" href="https://www.youtube.com/watch?v=tR8YH0G67Rk" target="_blank" rel="noreferrer" aria-label="Trailer" title="Trailer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a><a class="ico" href="https://anilist.co/anime/154587" target="_blank" rel="noreferrer" aria-label="On AniList" title="On AniList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></a></div>
+  </div>
+</article>
+<!-- [/catalogue] -->
+  </section>
+  <p class="empty" id="empty" hidden>No results.</p>
+
+  <footer class="foot">
+    <a href="/about/">Back to the shelf</a>
+    <span>Covers, synopses, episode counts and ratings from AniList. The italic lines are mine.</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var grid = document.getElementById("grid"), cards = Array.prototype.slice.call(grid.querySelectorAll(".card"));
+  var q = document.getElementById("q"), sortEl = document.getElementById("sort"), genreEl = document.getElementById("genre");
+  var count = document.getElementById("count"), empty = document.getElementById("empty"), total = count.textContent;
+  var touch = !(window.matchMedia && matchMedia("(hover: hover)").matches);
+
+  // Genre menu from whatever is on the shelf.
+  var genres = {};
+  cards.forEach(function (c) { (c.dataset.genres || "").split("|").forEach(function (g) { if (g) genres[g] = 1; }); });
+  Object.keys(genres).sort().forEach(function (g) { var o = document.createElement("option"); o.value = g; o.textContent = g; genreEl.appendChild(o); });
+
+  function norm(s) { return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function apply() {
+    var needle = norm(q.value.trim()), g = genreEl.value, key = sortEl.value, n = 0;
+    cards.forEach(function (c) {
+      var ok = (!g || ("|" + c.dataset.genres + "|").indexOf("|" + g + "|") >= 0) && (!needle || norm(c.dataset.search).indexOf(needle) >= 0);
+      c.hidden = !ok; if (ok) n++;
+      c.classList.remove("is-open");
+    });
+    cards.slice().sort(function (a, b) {
+      if (key === "title") return a.dataset.title.localeCompare(b.dataset.title);
+      if (key === "mine") return (+a.dataset.i) - (+b.dataset.i);
+      var av = +a.dataset[key] || 0, bv = +b.dataset[key] || 0;
+      return bv - av || (+a.dataset.i) - (+b.dataset.i);
+    }).forEach(function (c) { grid.appendChild(c); });
+    count.textContent = n === cards.length ? total : n + " of " + total;
+    empty.hidden = n > 0;
+  }
+  q.addEventListener("input", apply);
+  sortEl.addEventListener("change", apply);
+  genreEl.addEventListener("change", apply);
+
+  // Phones have no hover: the first tap opens the card, a tap elsewhere closes it.
+  if (touch) {
+    grid.addEventListener("click", function (e) {
+      var card = e.target.closest(".card"); if (!card) return;
+      if (card.classList.contains("is-open")) { if (e.target.closest("a")) return; card.classList.remove("is-open"); return; }
+      e.preventDefault();
+      cards.forEach(function (c) { c.classList.remove("is-open"); });
+      card.classList.add("is-open");
+    });
+    document.addEventListener("click", function (e) { if (!e.target.closest(".card")) cards.forEach(function (c) { c.classList.remove("is-open"); }); });
+  }
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { cards.forEach(function (c) { c.classList.remove("is-open"); }); document.activeElement && document.activeElement.blur(); } });
+
+  // Deep link: /stacks/#vinland-saga shows that card open.
+  var slug = location.hash.slice(1);
+  if (slug) cards.forEach(function (c) { if (c.id === slug) { c.classList.add("is-open"); c.scrollIntoView({ block: "center" }); } });
+})();
+</script>
+</body>
+</html>

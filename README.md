@@ -37,6 +37,26 @@ depends on. Fix the patch rather than dropping `--strict`.
 
 Commit and push; Pages redeploys in under a minute.
 
+## Adding an anime to the catalogue
+
+The catalogue at `/stacks/` is separate from the shelf, so adding a title is
+one entry, not a Claude Design round trip. Append to `stacks/anime.json`:
+
+```json
+{ "title": "Mob Psycho 100", "mal": 32182, "take": "One line, yours." }
+```
+
+`mal` is the number in the MyAnimeList URL (`myanimelist.net/anime/32182/...`).
+Optional: `status` (`"watching"` or `"caught up"`), `alltimer`, `manga`,
+`tag`, `quote` and `ref`. Order in the file is the page's default order. Then:
+
+```sh
+python3 fetch_catalogue.py
+```
+
+It asks AniList for the rest, saves the art into `covers/`, and rewrites the
+cards in `stacks/index.html`. Commit all three.
+
 ## Files
 
 | File | What it is |
@@ -44,6 +64,9 @@ Commit and push; Pages redeploys in under a minute.
 | `build.py` | Turns the export into the site: extracts assets, converts images, adds preloads/SEO, applies display fixes |
 | `content_patches.py` | Copy (current role, headline words), URL routing, cover preloading, accessibility and contrast fixes |
 | `fetch_covers.py` | Downloads The Stacks' cover art into `covers/`; rerun after adding books or anime in Claude Design |
+| `stacks/anime.json` | **The full anime catalogue, hand-edited.** The shelf on /about/ is the canon; this is everything |
+| `fetch_catalogue.py` | Builds `/stacks/` from `stacks/anime.json`: pulls episodes, year, studio, genres, score, cover, banner and trailer from AniList, writes the cards into `stacks/index.html` |
+| `stacks/index.html` | The catalogue page. Hand-written apart from the generated block between the `[catalogue]` markers |
 | `covers/` | Self-hosted cover art, so hovering a spine never waits on a third-party API |
 | `*.js` (root) | Loose scripts injected into the page: loading cover, the Valley map, parallax, snap, nav frost, keyboard support, watching.txt |
 | `tasks.json`, `watching.json` | Hand-edited data for DarylOS (public) |

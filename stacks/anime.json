@@ -1,0 +1,208 @@
+{
+ "_readme": [
+  "The Stacks catalogue: every anime, in the order they are listed here (that is the page's default sort).",
+  "Hand-edit this file, then run `python3 fetch_catalogue.py` to pull covers and metadata from AniList and rebuild stacks/index.html.",
+  "Fields: title (as shown), mal (MyAnimeList id, from the URL myanimelist.net/anime/<id>/...). Optional: status (\"watching\" | \"caught up\"), alltimer (true), manga (true: read the manga too), tag (short spine mark), take (one line, yours), quote, ref (where the quote is from)."
+ ],
+ "anime": [
+  {
+   "title": "Hajime no Ippo",
+   "mal": 263,
+   "alltimer": true,
+   "manga": true,
+   "tag": "V.1",
+   "take": "Above everything. Non-negotiable.",
+   "quote": "What does it mean… to be strong?",
+   "ref": "ROUND 1"
+  },
+  {
+   "title": "One Piece",
+   "mal": 21,
+   "tag": "1000+",
+   "take": "Still going. So am I.",
+   "quote": "A man's dream will never die!",
+   "ref": "GRAND LINE"
+  },
+  {
+   "title": "Hunter × Hunter",
+   "mal": 11061,
+   "tag": "V.12",
+   "take": "Chimera Ant arc is peak fiction. I don't make the rules.",
+   "quote": "You should enjoy the little detours.",
+   "ref": "EP. 147"
+  },
+  {
+   "title": "Attack on Titan",
+   "mal": 16498,
+   "tag": "S4",
+   "take": "The twists still hold up on rewatch.",
+   "quote": "Dedicate your hearts!",
+   "ref": "SURVEY CORPS"
+  },
+  {
+   "title": "Vinland Saga",
+   "mal": 37521,
+   "tag": "S2",
+   "take": "Best redemption arc in anime, not close.",
+   "quote": "I have no enemies.",
+   "ref": "FARMLAND ARC"
+  },
+  {
+   "title": "Death Note",
+   "mal": 1535,
+   "tag": "13",
+   "take": "Peak cat-and-mouse. L deserved better.",
+   "quote": "I'll take a potato chip… and eat it.",
+   "ref": "EP. 8"
+  },
+  {
+   "title": "Monster",
+   "mal": 19,
+   "manga": true,
+   "tag": "V.18",
+   "take": "Johan might be the scariest character ever written.",
+   "quote": "The monster inside me has grown this large.",
+   "ref": "CH. 162"
+  },
+  {
+   "title": "Jujutsu Kaisen",
+   "mal": 40748,
+   "tag": "S2",
+   "take": "Gojo carried, but the animation is the real star.",
+   "quote": "Throughout heaven and earth, I alone am the honored one.",
+   "ref": "SHIBUYA"
+  },
+  {
+   "title": "Demon Slayer",
+   "mal": 38000,
+   "tag": "S3",
+   "take": "Ufotable never misses on the fights.",
+   "quote": "Set your heart ablaze.",
+   "ref": "MUGEN TRAIN"
+  },
+  {
+   "title": "Naruto",
+   "mal": 20,
+   "tag": "SHIPPUDEN",
+   "take": "The childhood one. Believe it.",
+   "quote": "I never go back on my word. That's my nindo.",
+   "ref": "MY NINJA WAY"
+  },
+  {
+   "title": "Dragon Ball Z",
+   "mal": 813,
+   "tag": "9000+",
+   "take": "The blueprint for every power-up scream since.",
+   "quote": "It's over 9000!",
+   "ref": "SAIYAN SAGA"
+  },
+  {
+   "title": "Solo Leveling",
+   "mal": 52299,
+   "status": "caught up",
+   "tag": "S2",
+   "take": "Arise. The gym arc of anime.",
+   "quote": "Arise.",
+   "ref": "SHADOW MONARCH"
+  },
+  {
+   "title": "Blue Lock",
+   "mal": 49596,
+   "tag": "EGO",
+   "take": "Unhinged sports psychology. Peak ego.",
+   "quote": "Devour them all.",
+   "ref": "STRIKER"
+  },
+  {
+   "title": "Dr. Stone",
+   "mal": 38691,
+   "tag": "10B%",
+   "take": "Science propaganda that actually works.",
+   "quote": "This is exhilarating. Ten billion percent.",
+   "ref": "KINGDOM OF SCIENCE"
+  },
+  {
+   "title": "Hell's Paradise",
+   "mal": 46569,
+   "tag": "S1",
+   "take": "Gorgeous and brutal in equal measure.",
+   "quote": "I just want to see my wife again.",
+   "ref": "GABIMARU"
+  },
+  {
+   "title": "Black Clover",
+   "mal": 34572,
+   "tag": "170",
+   "take": "Started loud, ended top-tier. Trust the process.",
+   "quote": "Not giving up is my magic.",
+   "ref": "ASTA"
+  },
+  {
+   "title": "One Punch Man",
+   "mal": 30276,
+   "tag": "OK.",
+   "take": "The joke that outgrew the joke.",
+   "quote": "OK.",
+   "ref": "SAITAMA"
+  },
+  {
+   "title": "Fire Force",
+   "mal": 38671,
+   "tag": "8TH",
+   "take": "Animation heat in every sense.",
+   "quote": "Látom.",
+   "ref": "COMPANY 8"
+  },
+  {
+   "title": "Classroom of the Elite",
+   "mal": 35507,
+   "tag": "D-CLASS",
+   "take": "Ayanokoji is the coldest protagonist ever.",
+   "quote": "All people are nothing but tools.",
+   "ref": "AYANOKOJI"
+  },
+  {
+   "title": "Sword Art Online",
+   "mal": 11757,
+   "tag": "LINK START",
+   "take": "The isekai gateway drug. No regrets.",
+   "quote": "Link start!",
+   "ref": "AINCRAD"
+  },
+  {
+   "title": "Tokyo Ghoul",
+   "mal": 22319,
+   "manga": true,
+   "tag": "1000-7",
+   "take": "Season 1 and the manga. We don't discuss the rest.",
+   "quote": "What's 1000 minus 7?",
+   "ref": "KANEKI"
+  },
+  {
+   "title": "Promised Neverland",
+   "mal": 37779,
+   "tag": "81194",
+   "take": "S1 is a perfect thriller. Full stop.",
+   "quote": "We're breaking out of here. All of us.",
+   "ref": "GRACE FIELD"
+  },
+  {
+   "title": "Kaiju No. 8",
+   "mal": 52588,
+   "status": "caught up",
+   "tag": "S1",
+   "take": "Late-bloomer protagonist done right.",
+   "quote": "I'm not giving up on becoming someone who can fight beside you.",
+   "ref": "DEFENSE FORCE"
+  },
+  {
+   "title": "Frieren",
+   "mal": 52991,
+   "status": "watching",
+   "tag": "EP. 28",
+   "take": "One episode at a time, on purpose.",
+   "quote": "Himmel would have done the same.",
+   "ref": "NOW WATCHING"
+  }
+ ]
+}

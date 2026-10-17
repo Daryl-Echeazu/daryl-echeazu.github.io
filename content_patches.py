@@ -372,6 +372,19 @@ EXTRA_CSS = '''
   div[role="button"][title]:focus-visible { outline: 2px solid oklch(0.78 0.14 78); outline-offset: 3px; }'''
 
 
+# The Stacks: the shelf is the canon; the whole catalogue is its own page,
+# stacks/index.html (built by fetch_catalogue.py from stacks/anime.json).
+# At rest the label under the shelf ("THE CANON") is the link to it.
+STACKS_LINK = [
+    ('shelfMeta: s.shelfHov === -1 ? "THE CANON" : this.shelfData[s.shelfHov].meta,',
+     'shelfMeta: s.shelfHov === -1 ? React.createElement("a", { href: "/stacks/", style: { color: "inherit", '
+     'textDecoration: "none", borderBottom: "1px solid oklch(0.78 0.14 78 / 0.5)", paddingBottom: "1px" } }, '
+     '"The full catalogue") : this.shelfData[s.shelfHov].meta,'),
+]
+STACKS_CSS = """
+  /* [build.py] content_patches: the catalogue link under the shelf. */
+  a[href="/stacks/"]:hover { color: oklch(0.97 0 0) !important; }"""
+
 # Wide-viewport zoom, only where calc() can divide by a length (see ZOOM_TO
 # in build.py). Elsewhere --z stays 1: the 1280px layout, unscaled.
 ZOOM_CSS = """
@@ -406,6 +419,11 @@ def apply(text, hero_uuid=None, hero_srcset=None, covers_dir=None, social_image=
         p.already.append("extra css")
     else:
         p.sub("extra css", EXTRA_CSS_ANCHOR, EXTRA_CSS + EXTRA_CSS_ANCHOR)
+    p.subs("stacks link", STACKS_LINK)
+    if STACKS_CSS in p.text:
+        p.already.append("stacks css")
+    else:
+        p.sub("stacks css", EXTRA_CSS_ANCHOR, STACKS_CSS + EXTRA_CSS_ANCHOR)
 
     # Labels: the tracked-out Geist Mono caps (nav, dates, tags, captions)
     # read as an AI template. On the main pages they become upright
